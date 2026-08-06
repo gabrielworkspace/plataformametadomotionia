@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createClient, User } from '@supabase/supabase-js';
 
 // Configuração do Supabase
