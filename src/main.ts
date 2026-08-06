@@ -67,6 +67,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // UI Elements - User Profile
     const userProfileBtn = document.getElementById('user-profile-btn');
     const logoutBtn = document.getElementById('logout-btn');
+    const logoutBtnAi = document.getElementById('logout-btn-ai');
+    const backToHubBtn = document.getElementById('back-to-hub-btn');
     const userNameDisplay = document.getElementById('user-name-display');
     const userRoleDisplay = document.getElementById('user-role-display');
     const userAvatar = document.getElementById('user-avatar');
@@ -235,7 +237,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             userNameDisplay.textContent = user.email.split('@')[0];
             userRoleDisplay.textContent = userRole === 'admin' ? 'Administrador' : 'Aluno';
             userAvatar.src = `https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`;
-            logoutBtn.style.display = 'block';
+            if (logoutBtn) logoutBtn.style.display = 'block';
+            if (logoutBtnAi) logoutBtnAi.style.display = 'block';
 
             const adminSupportBtn = document.getElementById('admin-support-btn');
             const supportWidget = document.getElementById('support-widget');
@@ -286,7 +289,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             userNameDisplay.textContent = 'Entrar / Cadastrar';
             userRoleDisplay.textContent = 'Faça login para salvar';
             userAvatar.src = 'https://ui-avatars.com/api/?name=Guest&background=1e293b&color=fff';
-            logoutBtn.style.display = 'none';
+            if (logoutBtn) logoutBtn.style.display = 'none';
+            if (logoutBtnAi) logoutBtnAi.style.display = 'none';
             addPromptBtn.style.display = 'none';
             const adminSupportBtn = document.getElementById('admin-support-btn');
             const supportWidget = document.getElementById('support-widget');
@@ -514,11 +518,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             authSubmitBtn.disabled = false;
             authSubmitBtn.textContent = isLoginMode ? 'Entrar' : 'Criar Conta';
         }
-    });
-
-    // Logout
-    logoutBtn.addEventListener('click', async () => {
-        await supabase.auth.signOut();
     });
 
     // ==========================================
@@ -1955,6 +1954,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (appContainer) appContainer.style.display = 'flex';
         });
     }
+    
+    if (backToHubBtn) {
+        backToHubBtn.addEventListener('click', () => {
+            if (appContainer) appContainer.style.display = 'none';
+            if (dashboardContainer) dashboardContainer.style.display = 'flex';
+        });
+    }
     // ==========================================
     // HEADER & LOGOUT
     // ==========================================
@@ -1978,28 +1984,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const handleLogout = async (e) => {
+        e.preventDefault();
+        // Clear current user
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        
+        if (supabase) {
+            await supabase.auth.signOut();
+        }
+        
+        // Hide dashboard & app, show login
+        const dashboardContainer = document.getElementById('dashboard-container');
+        const loginPage = document.getElementById('login-page');
+        
+        if (appContainer) appContainer.style.display = 'none';
+        if (dashboardContainer) dashboardContainer.style.display = 'none';
+        if (loginPage) loginPage.style.display = 'flex';
+        
+        // Remove user avatar from widget if needed
+        if (userProfileBtn && profileDropdownMenu) {
+            userProfileBtn.classList.remove('active');
+            profileDropdownMenu.classList.remove('show');
+        }
+    };
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            // Clear current user
-            localStorage.removeItem('currentUser');
-            currentUser = null;
-            
-            // Hide dashboard & app, show login
-            const dashboardContainer = document.getElementById('dashboard-container');
-            const loginPage = document.getElementById('login-page');
-            
-            if (dashboardContainer) dashboardContainer.style.display = 'none';
-            if (appContainer) appContainer.style.display = 'none';
-            if (loginPage) loginPage.style.display = 'flex';
-            
-            // Remove user avatar from widget if needed
-            if (userProfileBtn && profileDropdownMenu) {
-                userProfileBtn.classList.remove('active');
-                profileDropdownMenu.classList.remove('show');
-            }
-        });
+        logoutBtn.addEventListener('click', handleLogout);
     }
-
+    if (logoutBtnAi) {
+        logoutBtnAi.addEventListener('click', handleLogout);
+    }
 });
-
