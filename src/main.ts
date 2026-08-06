@@ -199,6 +199,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Função para atualizar a interface baseada no usuário
     async function handleAuthStateChange(user) {
         if (user) {
+            // Se já está logado como este usuário, não reconstrua a UI (evita reset ao focar na aba)
+            if (currentUser && currentUser.id === user.id) return;
+
             currentUser = user;
             alunoId = user.id; // Atualiza o alunoId com o ID real do usuário
             
@@ -269,6 +272,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } else {
             // Deslogado (Lock app)
+            if (!currentUser) return; // Já está deslogado
+            
             hasRunProcessingScreen = false;
             currentUser = null;
             userRole = 'student';
