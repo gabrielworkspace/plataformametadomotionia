@@ -338,24 +338,33 @@ document.addEventListener('DOMContentLoaded', async () => {
             currentSessionId = crypto.randomUUID();
             messagesContainer.innerHTML = `
                 <div class="welcome-screen">
+                    <div class="welcome-bg-glow"></div>
                     <div class="welcome-hero">
-                        <div class="logo-icon-large">M</div>
-                        <h1>Instrutor de Prompt</h1>
-                        <p>O <strong>Método Motion IA</strong> configurado com as melhores práticas para extrair o máximo do <strong>Google Omni</strong>.</p>
+                        <div class="logo-icon-large logo-pulse">M</div>
+                        <h1 class="welcome-title">Instrutor de Prompt</h1>
+                        <p class="welcome-subtitle">O <strong>Método Motion IA</strong> configurado com as melhores práticas para extrair o máximo do <strong>Google Omni</strong>.</p>
                     </div>
                     
                     <div class="suggestion-grid">
-                        <div class="suggestion-card">
-                            <p>Me ajude a criar um prompt perfeito do zero.</p>
+                        <div class="suggestion-card glass-card">
+                            <i data-lucide="zap" class="suggestion-icon"></i>
+                            <p>Criar um Prompt Novo de forma rápida e fácil.</p>
                         </div>
-                        <div class="suggestion-card">
-                            <p>Quero otimizar e melhorar um prompt que já uso.</p>
+                        <div class="suggestion-card glass-card">
+                            <i data-lucide="wand-2" class="suggestion-icon"></i>
+                            <p>Melhorar um Prompt que já uso e otimizar tempo.</p>
                         </div>
-                        <div class="suggestion-card">
-                            <p>Crie um prompt de vendas focado na área comercial.</p>
+                        <div class="suggestion-card glass-card">
+                            <i data-lucide="library" class="suggestion-icon"></i>
+                            <p>Explorar a Biblioteca e acessar Prompts do Método.</p>
                         </div>
                     </div>
-                </div>`;
+                </div>
+            `;
+            if (window.lucide) {
+                window.lucide.createIcons({ root: messagesContainer });
+            }
+            bindSuggestionCards();
         });
     }
 
