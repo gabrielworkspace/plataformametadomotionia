@@ -194,6 +194,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // AUTENTICAÇÃO E CONTROLE DE ESTADO (Supabase)
     // ==========================================
     
+    let hasRunProcessingScreen = false;
+
     // Função para atualizar a interface baseada no usuário
     async function handleAuthStateChange(user) {
         if (user) {
@@ -255,7 +257,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Unlock app (with Processing Screen)
             const dashboardContainer = document.getElementById('dashboard-container');
-            if (loginPage.style.display !== 'none') {
+            if (loginPage.style.display !== 'none' && !hasRunProcessingScreen) {
+                hasRunProcessingScreen = true;
                 await runProcessingScreen();
             } else {
                 const processingPage = document.getElementById('processing-page');
@@ -266,6 +269,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         } else {
             // Deslogado (Lock app)
+            hasRunProcessingScreen = false;
             currentUser = null;
             userRole = 'student';
             alunoId = "aluno_visitante";
@@ -290,13 +294,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Listener do Supabase para mudanças de auth (login/logout)
     if (supabase) {
+        let authInitialized = false;
         supabase.auth.onAuthStateChange((event, session) => {
-            handleAuthStateChange(session?.user || null);
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                handleAuthStateChange(session?.user || null);
+                authInitialized = true;
+            }
         });
 
-        // Verificar sessão inicial
-        const { data: { session } } = await supabase.auth.getSession();
-        handleAuthStateChange(session?.user || null);
+        // Verificar sessão inicial (apenas se o evento INITIAL_SESSION não tiver disparado muito rápido)
+        setTimeout(async () => {
+            if (!authInitialized) {
+                const { data: { session } } = await supabase.auth.getSession();
+                handleAuthStateChange(session?.user || null);
+            }
+        }, 500);
+        
+        // Supabase Realtime para os Prompts Globais (Warehouse)
+        supabase.channel('global-prompts-updates')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'warehouse_prompts' }, (payload) => {
+                loadGlobalPrompts();
+            })
+            .subscribe();
     }
 
     // Ação do Perfil de Usuário
