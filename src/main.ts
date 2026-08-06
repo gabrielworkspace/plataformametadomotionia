@@ -339,9 +339,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (toggleAuthBtn && togglePromptText) {
         toggleAuthBtn.addEventListener('click', () => {
             isLoginMode = !isLoginMode;
-            authSubmitBtn.textContent = isLoginMode ? 'Sign In' : 'Sign Up';
-            togglePromptText.textContent = isLoginMode ? "Don't have an account?" : "Already have an account?";
-            toggleAuthBtn.textContent = isLoginMode ? "Sign up" : "Sign in";
+            authSubmitBtn.textContent = isLoginMode ? 'Entrar' : 'Cadastrar';
+            togglePromptText.textContent = isLoginMode ? "Não tem uma conta?" : "Já tem uma conta?";
+            toggleAuthBtn.textContent = isLoginMode ? "Cadastrar" : "Entrar";
             
             // Mostra/esconde campos exclusivos de cadastro
             document.querySelectorAll('.register-only').forEach(el => {
@@ -354,11 +354,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const loginMainTitle = document.getElementById('login-main-title');
             if (loginMainTitle) {
-                loginMainTitle.textContent = isLoginMode ? 'Sign in to your account' : 'Create an account';
+                loginMainTitle.textContent = isLoginMode ? 'Entre na sua conta' : 'Crie uma conta';
             }
 
             if (loginSubtitle) {
-                loginSubtitle.textContent = isLoginMode ? 'Enter your email below to sign in' : 'Enter your details below to sign up';
+                loginSubtitle.textContent = isLoginMode ? 'Digite seu e-mail abaixo para entrar' : 'Digite seus dados abaixo para se cadastrar';
             }
             authError.style.display = 'none';
             
