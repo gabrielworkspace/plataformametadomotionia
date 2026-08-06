@@ -1748,6 +1748,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (myTicket && myTicket.messages) {
             myTicket.messages.forEach((msg: any) => {
+                if (msg.text === 'TICKET_CLOSED_SYSTEM_FLAG') {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.className = `support-message support-admin-msg`;
+                    msgDiv.style.opacity = '0.7';
+                    msgDiv.innerHTML = `<p><em>Atendimento finalizado.</em></p>`;
+                    supportChatBody.appendChild(msgDiv);
+                    return;
+                }
                 const msgDiv = document.createElement('div');
                 msgDiv.className = `support-message ${msg.sender === 'user' ? 'support-user-msg' : 'support-admin-msg'}`;
                 msgDiv.innerHTML = `<p>${msg.text}</p>`;
@@ -1797,7 +1805,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         let html = '';
         ticketIds.forEach(id => {
             const t = memoryTickets[id];
-            const lastMsg = t.messages.length > 0 ? t.messages[t.messages.length - 1].text : '';
+            if (!t.messages || t.messages.length === 0) return;
+            const lastMsgObj = t.messages[t.messages.length - 1];
+            if (lastMsgObj.text === 'TICKET_CLOSED_SYSTEM_FLAG') return; // Hide closed tickets
+            
+            const lastMsg = lastMsgObj.text;
             const isActive = activeAdminTicketId === id ? 'active' : '';
             html += `
                 <div class="admin-ticket-item ${isActive}" data-id="${id}">
@@ -1806,6 +1818,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
             `;
         });
+        
+        if (!html) {
+            adminTicketsList.innerHTML = '<div class="empty-state">Nenhuma conversa ativa no momento.</div>';
+            return;
+        }
         
         adminTicketsList.innerHTML = html;
         
@@ -1833,11 +1850,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (adminActiveUserAvatar) adminActiveUserAvatar.textContent = ticket.name.charAt(0).toUpperCase();
         
         if (adminChatReplyInput) adminChatReplyInput.disabled = false;
-        if (adminChatReplyBtn) adminChatReplyBtn.disabled = false;
+        
+        const finishBtn = document.getElementById('admin-finish-ticket-btn');
+        if (finishBtn) finishBtn.style.display = 'block';
 
         adminActiveChatBody.innerHTML = '';
         
         ticket.messages.forEach((msg: any) => {
+            if (msg.text === 'TICKET_CLOSED_SYSTEM_FLAG') {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `admin-chat-msg system`;
+                msgDiv.style.textAlign = 'center';
+                msgDiv.style.fontSize = '12px';
+                msgDiv.style.color = '#94a3b8';
+                msgDiv.innerHTML = `Atendimento finalizado`;
+                adminActiveChatBody.appendChild(msgDiv);
+                return;
+            }
             const msgDiv = document.createElement('div');
             msgDiv.className = `admin-chat-msg ${msg.sender === 'admin' ? 'admin' : 'user'}`;
             msgDiv.innerHTML = `${msg.text}`;
@@ -1874,6 +1903,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adminChatReplyInput) {
         adminChatReplyInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendAdminReply();
+        });
+    }
+
+    const adminFinishTicketBtn = document.getElementById('admin-finish-ticket-btn');
+    if (adminFinishTicketBtn) {
+        adminFinishTicketBtn.addEventListener('click', async () => {
+            if (!activeAdminTicketId) return;
+            const t = memoryTickets[activeAdminTicketId];
+            if (t) {
+                // Add closed flag
+                t.messages.push({ sender: 'system', text: 'TICKET_CLOSED_SYSTEM_FLAG', timestamp: Date.now() });
+                await saveTicketToSupabase(t);
+                
+                // Clear UI
+                activeAdminTicketId = null;
+                adminFinishTicketBtn.style.display = 'none';
+                if (adminActiveUserName) adminActiveUserName.textContent = 'Selecione uma conversa';
+                if (adminActiveUserEmail) adminActiveUserEmail.textContent = '---';
+                if (adminActiveUserAvatar) adminActiveUserAvatar.textContent = '-';
+                if (adminActiveChatBody) adminActiveChatBody.innerHTML = '<div class="empty-chat-state">Nenhum ticket selecionado.</div>';
+                
+                refreshAdminView();
+            }
         });
     }
 
