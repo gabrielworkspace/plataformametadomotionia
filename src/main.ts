@@ -1619,7 +1619,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function refreshTicketsFromSupabase() {
         if (!supabase) return;
         const { data, error } = await supabase.from('support_tickets').select('*').order('updated_at', { ascending: false });
-        if (data) {
+        if (error) {
+            console.error("Erro ao buscar tickets:", error);
+            return;
+        }
+        if (data && data.length > 0) {
             memoryTickets = {};
             data.forEach(t => {
                 memoryTickets[t.user_id] = {
@@ -1635,13 +1639,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Helper: Salva ticket no Supabase
     async function saveTicketToSupabase(ticket: any) {
         if (!supabase) return;
-        await supabase.from('support_tickets').upsert({
+        const { error } = await supabase.from('support_tickets').upsert({
             user_id: ticket.userId,
             user_email: ticket.email,
             user_name: ticket.name,
             messages: ticket.messages,
             updated_at: new Date().toISOString()
         });
+        if (error) {
+            console.error("Erro ao salvar ticket:", error);
+            alert("Erro do banco de dados (Supabase): " + error.message + "\n\nVerifique se a tabela 'support_tickets' existe e possui as permissões corretas.");
+        }
     }
 
     // User: Toggle Widget
