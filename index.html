@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion IA - Chat</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-page" id="login-page">
+        <!-- Left Side (Form) -->
+        <div class="login-form-side">
+            <div class="login-form-container">
+                <div class="modal-title" style="text-align: center; margin-bottom: 32px;">
+                    <h2 id="login-main-title" style="font-size: 24px; font-weight: 700;">Sign in to your account</h2>
+                    <p id="login-subtitle" style="color: var(--text-muted, #71717a); font-size: 14px; margin-top: 8px;">Enter your email below to sign in</p>
+                </div>
+                
+                <form id="auth-form" class="auth-form premium-auth-form">
+                    
+                    <div class="premium-form-group register-only" style="display: none;">
+                        <input type="text" id="auth-name" class="premium-input" placeholder=" ">
+                        <label for="auth-name" class="premium-label">Full Name</label>
+                    </div>
+                    
+                    <div class="premium-form-group">
+                        <input type="email" id="auth-email" required class="premium-input" placeholder=" ">
+                        <label for="auth-email" class="premium-label">Email</label>
+                    </div>
+                    
+                    <div class="premium-form-group input-with-icon">
+                        <input type="password" id="auth-password" required minlength="6" class="premium-input" placeholder=" ">
+                        <label for="auth-password" class="premium-label">Password</label>
+                        <button type="button" class="toggle-password-btn" id="toggle-password">
+                            <svg class="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                        
+                        <div id="password-strength-container" class="register-only" style="display: none;">
+                            <div class="strength-bar-bg">
+                                <div id="strength-bar-fill" class="strength-bar-fill"></div>
+                            </div>
+                            <div class="strength-text" id="strength-text">Força da Senha</div>
+                        </div>
+                    </div>
+                    
+                    <div class="premium-form-group register-only" style="display: none;">
+                        <input type="password" id="auth-confirm-password" minlength="6" class="premium-input" placeholder=" ">
+                        <label for="auth-confirm-password" class="premium-label">Confirm Password</label>
+                    </div>
+                    
+                    <button type="submit" class="auth-submit-btn premium-submit-btn" id="auth-submit-btn">
+                        <span>Sign In</span>
+                        <div class="btn-glow"></div>
+                    </button>
+                    <p id="auth-error" class="auth-error-msg" style="display: none;"></p>
+                </form>
+                
+                <div class="form-toggle-text premium-toggle-text">
+                    <span id="toggle-prompt-text">Don't have an account?</span> 
+                    <button type="button" class="toggle-auth-mode-btn" id="toggle-auth-mode-btn">Sign up</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Side (Image & Quote) -->
+        <div class="login-image-side" id="login-image-side">
+            <div class="login-image-gradient"></div>
+            <div class="login-quote-container">
+                <blockquote class="login-quote">
+                    <p style="font-size: 1.125rem; font-weight: 500; margin-bottom: 8px; color: #fff;">
+                        “<span id="typewriter-text"></span><span class="typewriter-cursor animate-pulse">|</span>”
+                    </p>
+                    <cite id="quote-author" style="font-size: 0.875rem; font-weight: 300; color: rgba(255,255,255,0.7); font-style: normal;">— EaseMize UI</cite>
+                </blockquote>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Screen -->
+    <div class="processing-page" id="processing-page" style="display: none; align-items: center; justify-content: center; min-height: 100vh; width: 100%; position: relative; background: radial-gradient(125% 125% at 50% 100%, #000000 40%, #010133 100%);">
+        <div class="processing-card" style="width: 480px; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1); overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); background-color: #0b0b0f; color: white;">
+            <!-- Header -->
+            <div class="processing-header" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <div class="processing-title" style="font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Inicializando Motion IA...</div>
+                <div class="processing-percentage" id="processing-percentage" style="font-size: 12px; color: rgba(255,255,255,0.6);">0%</div>
+            </div>
+            
+            <!-- Body -->
+            <div class="processing-body" style="position: relative; height: 400px; width: 100%; background: black; overflow: hidden;">
+                <!-- Glitch Canvas Container -->
+                <div class="glitch-container" id="glitch-container" style="position: absolute; inset: 0; opacity: 0.25; z-index: 10;">
+                    <canvas id="glitch-canvas" style="display: block; width: 100%; height: 100%;"></canvas>
+                </div>
+                <!-- Gradients -->
+                <div class="processing-gradients" style="position: absolute; inset: 0; pointer-events: none; z-index: 11;">
+                    <div class="grad-top" style="position: absolute; top: 0; left: 0; width: 100%; height: 64px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.7), transparent); filter: blur(10px);"></div>
+                    <div class="grad-bottom" style="position: absolute; bottom: 0; left: 0; width: 100%; height: 64px; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.7), transparent); filter: blur(10px);"></div>
+                    <div class="grad-left" style="position: absolute; top: 0; left: 0; width: 64px; height: 100%; background: linear-gradient(to right, rgba(0,0,0,0.9), rgba(0,0,0,0.7), transparent); filter: blur(10px);"></div>
+                    <div class="grad-right" style="position: absolute; top: 0; right: 0; width: 64px; height: 100%; background: linear-gradient(to left, rgba(0,0,0,0.9), rgba(0,0,0,0.7), transparent); filter: blur(10px);"></div>
+                </div>
+                <div class="processing-glow" style="position: absolute; inset: 0; z-index: 0; background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(120,180,255,0.15), transparent 70%), #000;"></div>
+                
+                <!-- Content -->
+                <div class="processing-content-front" style="position: relative; z-index: 20; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
+                    <div class="loader-container" id="processing-icon-container" style="margin-bottom: 16px; filter: drop-shadow(0 0 8px rgba(120,180,255,0.4));">
+                        <div class="custom-loader-5 size-md"><span></span></div>
+                    </div>
+                    
+                    <p class="processing-status-text" id="processing-status-text" style="font-size: 14px; font-weight: 700; text-align: center; margin-bottom: 16px; filter: drop-shadow(0 0 6px rgba(229,231,235,0.2)); transition: opacity 0.3s, transform 0.3s;">Preparando ambiente Motion IA...</p>
+                    
+                    <div class="ascii-progress-container" id="ascii-progress-container" style="font-family: monospace; font-size: 1.125rem; display: flex; align-items: center; color: rgba(255,255,255,0.8);">
+                        <span class="ascii-bracket" style="color: rgba(255,255,255,0.6); margin-right: 4px;">[</span>
+                        <div class="ascii-bars" id="ascii-bars" style="display: flex;"></div>
+                        <span class="ascii-bracket" style="color: rgba(255,255,255,0.6); margin-left: 4px;">]</span>
+                        <span class="ascii-percentage-text" id="ascii-percentage-text" style="color: rgba(255,255,255,0.6); margin-left: 8px; font-size: 0.875rem;">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="processing-footer" style="display: flex; justify-content: center; border-top: 1px solid rgba(255,255,255,0.1); padding: 8px 0;">
+                <span style="font-size: 10px; letter-spacing: 0.05em; color: rgba(255,255,255,0.4);">Plataforma Motion IA</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Central Screen -->
+    <div class="dashboard-container" id="dashboard-container" style="display: none;">
+        <div class="dashboard-header">
+            <div class="logo">
+                <div class="logo-icon-small">M</div>
+                <h2>Motion IA</h2>
+            </div>
+            <div class="user-profile-wrapper" id="user-profile-wrapper">
+                <div class="user-profile premium-profile-btn" id="user-profile-btn">
+                    <div class="user-info">
+                        <span class="user-name" id="dashboard-user-name">Usuário</span>
+                        <span class="user-plan" id="dashboard-user-role">Aluno</span>
+                    </div>
+                    <div class="avatar">
+                        <img id="dashboard-user-avatar" src="https://ui-avatars.com/api/?name=Guest&background=1e293b&color=fff" alt="User Avatar">
+                    </div>
+                    <svg class="dropdown-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+
+                <!-- Dropdown Menu -->
+                <div class="profile-dropdown-menu" id="profile-dropdown-menu">
+                    <div class="dropdown-header">
+                        <p class="dropdown-title">Minha Conta</p>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Meu Perfil
+                    </a>
+                    <a href="#" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        Configurações
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item logout-item" id="logout-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        Sair da conta
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-hero">
+            <h1>O que você quer fazer hoje?</h1>
+            <p>Selecione uma das opções abaixo para acessar os recursos exclusivos da plataforma.</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Card 1: Chat/IA -->
+            <div class="dashboard-card" id="dashboard-go-ai">
+                <div class="dashboard-card-icon" style="background: rgba(0, 242, 254, 0.1); color: var(--accent-secondary);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </div>
+                <h3>Usar a nossa IA</h3>
+                <p>Acesse o Instrutor de Prompt e extraia o máximo das IAs.</p>
+                <div class="dashboard-card-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </div>
+            </div>
+
+            <!-- Card 2: Área de Membros -->
+            <a href="#" target="_blank" class="dashboard-card" id="dashboard-go-members" style="text-decoration: none;">
+                <div class="dashboard-card-icon" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+                <h3>Área de Membros</h3>
+                <p>Acesse o grupo exclusivo no WhatsApp para tirar dúvidas.</p>
+                <div class="dashboard-card-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                </div>
+            </a>
+
+            <!-- Card 3: Curso -->
+            <a href="#" target="_blank" class="dashboard-card" id="dashboard-go-course" style="text-decoration: none;">
+                <div class="dashboard-card-icon" style="background: rgba(168, 85, 247, 0.1); color: #a855f7;">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+                </div>
+                <h3>Acessar o Curso</h3>
+                <p>Assista às aulas e masterize a criação de Prompts.</p>
+                <div class="dashboard-card-arrow">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="app-container" style="display: none;">
+        
+        <!-- Coluna 1: Histórico -->
+        <aside class="history-sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon-small">M</div>
+                    <h2>Motion IA</h2>
+                </div>
+            </div>
+            
+            <button class="new-chat-btn" id="new-chat-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Nova Conversa
+            </button>
+
+            <div class="chat-history" id="chat-history-list">
+                <!-- As conversas aparecerão aqui dinamicamente -->
+            </div>
+
+            <div class="sidebar-footer">
+                <button id="admin-support-btn" class="premium-admin-btn" style="display: none;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><circle cx="17" cy="7" r="3" fill="#00f2fe" stroke="none" class="pulse-dot"></circle></svg>
+                    Painel de Suporte VIP
+                </button>
+                <div class="user-profile" id="user-profile-btn">
+                    <div class="avatar">
+                        <img id="user-avatar" src="https://ui-avatars.com/api/?name=Guest&background=1e293b&color=fff" alt="User Avatar">
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name" id="user-name-display">Entrar / Cadastrar</span>
+                        <span class="user-plan" id="user-role-display">Faça login para salvar</span>
+                    </div>
+                </div>
+                <button id="logout-btn" style="display: none; width: 100%; margin-top: 10px; padding: 10px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;">Sair da Conta</button>
+            </div>
+        </aside>
+
+        <!-- Coluna 2: Chat -->
+        <main class="chat-area">
+            <!-- Messages Container -->
+            <div class="messages-container" id="messages-container">
+                
+                <div class="welcome-screen">
+                    <div class="welcome-hero">
+                        <div class="logo-icon-large">M</div>
+                        <h1>Instrutor de Prompt</h1>
+                        <p>O <strong>Método Motion IA</strong> configurado com as melhores práticas para extrair o máximo do <strong>Google Omni</strong>.</p>
+                    </div>
+                    
+                    <div class="suggestion-grid">
+                        <div class="suggestion-card">
+                            <p>Criar um Prompt Novo de forma rápida e fácil.</p>
+                        </div>
+                        <div class="suggestion-card">
+                            <p>Melhorar um Prompt que já uso e otimizar tempo.</p>
+                        </div>
+                        <div class="suggestion-card">
+                            <p>Explorar a Biblioteca e acessar Prompts do Método.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Example Message format (Hidden initially) -->
+                <div class="message ai-message" style="display: none;">
+                    <div class="message-avatar">
+                        <div class="logo-icon-small">M</div>
+                    </div>
+                    <div class="message-content">
+                        <p>Olá! Sou a Motion IA. Como posso ajudar com os seus projetos hoje?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-box">
+                    <button class="icon-btn attachment-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                    </button>
+                    <textarea id="chat-input" placeholder="Converse com o Instrutor de Prompt..." rows="1"></textarea>
+                    <button class="icon-btn voice-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </button>
+                    <button class="send-btn" id="send-btn" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </button>
+                </div>
+                <div class="input-footer">
+                    A Motion IA pode cometer erros. Considere verificar informações importantes.
+                </div>
+            </div>
+        </main>
+
+        <!-- Coluna 3: Armazém -->
+        <aside class="warehouse-sidebar" id="warehouse-sidebar">
+            <div class="warehouse-header">
+                <div class="warehouse-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <h2>Armazém de Prompts</h2>
+                </div>
+                <div class="warehouse-tabs">
+                    <button class="w-tab active" data-target="warehouse-content-global">Globais</button>
+                    <button class="w-tab" data-target="warehouse-content-my-prompts">Meus Prompts</button>
+                </div>
+            </div>
+            
+            <button class="admin-btn" id="add-prompt-btn" style="display: none; margin: 16px;">
+                + Adicionar Prompt
+            </button>
+
+            <div class="warehouse-body" id="warehouse-content-global">
+                <div class="loading-prompts">Carregando prompts globais...</div>
+            </div>
+            <div class="warehouse-body" id="warehouse-content-my-prompts" style="display: none;">
+                <div class="loading-prompts">Faça login para ver e salvar seus prompts.</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Support Chat Widget (For Users) -->
+    <div class="support-widget" id="support-widget" style="display: none;">
+        <!-- Widget Button -->
+        <button class="support-widget-btn premium-support-btn" id="support-widget-btn">
+            <div class="support-icon-container">
+                <svg class="support-icon-open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <svg class="support-icon-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            <span class="support-btn-text">Precisa de ajuda?</span>
+        </button>
+        
+        <!-- Chat Window -->
+        <div class="support-chat-window" id="support-chat-window" style="display: none;">
+            <div class="support-chat-header">
+                <h3>Suporte Motion IA</h3>
+                <p>Normalmente respondemos em algumas horas.</p>
+            </div>
+            <div class="support-chat-body" id="support-chat-body">
+                <div class="support-message support-admin-msg">
+                    <p>Olá! Como podemos ajudar você hoje?</p>
+                </div>
+            </div>
+            <div class="support-chat-input">
+                <input type="text" id="support-chat-input-field" placeholder="Escreva sua mensagem...">
+                <button id="support-send-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Support Dashboard Modal -->
+    <div class="modal-overlay" id="admin-support-modal">
+        <div class="modal-content admin-support-panel">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h2>Central de Suporte</h2>
+                </div>
+                <button class="close-btn" id="close-admin-support-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            
+            <div class="admin-support-container">
+                <!-- Sidebar for Active Tickets -->
+                <div class="admin-support-sidebar">
+                    <div class="sidebar-header-title">
+                        <h3>Conversas Ativas</h3>
+                    </div>
+                    <div id="admin-tickets-list" class="admin-tickets-list">
+                        <!-- Tickets loaded here -->
+                        <div class="empty-state">Nenhuma conversa ativa no momento.</div>
+                    </div>
+                </div>
+                
+                <!-- Main Chat Area for Admin -->
+                <div class="admin-support-main">
+                    <div id="admin-active-chat-header" class="admin-chat-header">
+                        <div class="chat-header-avatar" id="admin-active-user-avatar">
+                            -
+                        </div>
+                        <div class="chat-header-info">
+                            <h3 id="admin-active-user-name">Selecione uma conversa</h3>
+                            <span id="admin-active-user-email">---</span>
+                        </div>
+                    </div>
+                    
+                    <div id="admin-active-chat-body" class="admin-chat-body">
+                        <div class="empty-chat-state">
+                            Nenhum ticket selecionado.
+                        </div>
+                    </div>
+                    
+                    <div class="admin-chat-input-area">
+                        <input type="text" id="admin-chat-reply-input" placeholder="Digite sua resposta para o usuário..." disabled>
+                        <button id="admin-chat-reply-btn" disabled>
+                            <span>Enviar</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Prompt Modal -->
+    <div class="modal-overlay" id="add-prompt-modal">
+        <div class="modal-content glass-panel" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <h2 id="modal-prompt-title">Adicionar Novo Prompt</h2>
+                </div>
+                <button class="close-btn" id="close-add-prompt-btn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <button type="button" id="fetch-from-chat-btn" style="background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-secondary); color: var(--accent-secondary); padding: 10px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px; transition: all 0.2s; width: 100%;">
+                    <i data-lucide="download" style="width: 16px; height: 16px;"></i> Recolher da conversa
+                </button>
+                <form id="add-prompt-form" class="auth-form">
+                    <input type="hidden" id="add-prompt-id" value="">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <input type="text" id="add-prompt-category" required placeholder="Ex: Marketing e Vendas">
+                    </div>
+                    <div class="form-group">
+                        <label>Nome do Prompt</label>
+                        <input type="text" id="add-prompt-title" required placeholder="Ex: Criar Copy para Anúncio">
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="margin-bottom: 0;">Prompt Inicial</label>
+                            <button type="button" class="copy-field-btn" data-target="add-prompt-initial" title="Copiar" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px; display: flex; align-items: center;">
+                                <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                        <textarea id="add-prompt-initial" rows="3" placeholder="O texto que começa o comando..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="margin-bottom: 0;">Roteiro e Instruções</label>
+                            <button type="button" class="copy-field-btn" data-target="add-prompt-instructions" title="Copiar" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px; display: flex; align-items: center;">
+                                <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                        <textarea id="add-prompt-instructions" rows="4" placeholder="Passo a passo, regras ou instruções..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="margin-bottom: 0;">Prompt Final</label>
+                            <button type="button" class="copy-field-btn" data-target="add-prompt-final" title="Copiar" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px; display: flex; align-items: center;">
+                                <i data-lucide="copy" style="width: 14px; height: 14px;"></i>
+                            </button>
+                        </div>
+                        <textarea id="add-prompt-final" rows="2" placeholder="Ex: Retorne em formato de tabela..."></textarea>
+                    </div>
+                    <button type="submit" class="auth-submit-btn">Salvar Prompt</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
