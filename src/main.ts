@@ -60,6 +60,67 @@ document.addEventListener('DOMContentLoaded', async () => {
     const appContainer = document.querySelector('.app-container') as HTMLElement;
     const chatInput = document.getElementById('chat-input') as HTMLTextAreaElement;
     const sendBtn = document.getElementById('send-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+    let currentAbortController: AbortController | null = null;
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', () => {
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+        });
+    }
+    
+    // Voice Recording Logic
+    const voiceBtn = document.querySelector('.voice-btn') as HTMLButtonElement;
+    if (voiceBtn) {
+        // @ts-ignore
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.interimResults = false;
+            
+            let isRecording = false;
+            
+            voiceBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (isRecording) {
+                    recognition.stop();
+                } else {
+                    recognition.start();
+                }
+            });
+            
+            recognition.onstart = () => {
+                isRecording = true;
+                voiceBtn.style.color = '#ef4444';
+            };
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                chatInput.value = chatInput.value ? chatInput.value + ' ' + transcript : transcript;
+                chatInput.dispatchEvent(new Event('input'));
+            };
+            
+            recognition.onend = () => {
+                isRecording = false;
+                voiceBtn.style.color = '';
+            };
+            
+            recognition.onerror = (event) => {
+                console.error("Erro na gravação de voz", event.error);
+                isRecording = false;
+                voiceBtn.style.color = '';
+            };
+        } else {
+            voiceBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                alert("Seu navegador não suporta gravação de voz nativa.");
+            });
+        }
+    }
+
     const messagesContainer = document.getElementById('messages-container');
     const welcomeScreen = document.querySelector('.welcome-screen');
     const suggestionCards = document.querySelectorAll('.suggestion-card');
@@ -97,6 +158,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const authSubmitBtn = document.getElementById('auth-submit-btn');
     const loginSubtitle = document.getElementById('login-subtitle');
     let isLoginMode = true;
+
+    // Sidebar Collapse Logic
+    const mainSidebar = document.getElementById('main-sidebar');
+    const collapseBtn = document.getElementById('collapse-sidebar-btn');
+    if (collapseBtn && mainSidebar) {
+        collapseBtn.addEventListener('click', () => {
+            mainSidebar.classList.toggle('collapsed');
+        });
+    }
 
     // Typewriter and Background Logic
     let typewriterTimeout: number | undefined;
@@ -178,11 +248,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupAuthUI();
 
     // Warehouse Sidebar
-    const wTabs = document.querySelectorAll('.w-tab');
     const wGlobalContent = document.getElementById('warehouse-content-global');
     const wMyPromptsContent = document.getElementById('warehouse-content-my-prompts');
-    const wMyPromptsTab = document.querySelector('.w-tab[data-target="warehouse-content-my-prompts"]');
     const addPromptBtn = document.getElementById('add-prompt-btn');
+    const addGlobalPromptBtn = document.getElementById('add-global-prompt-btn');
+    const libraryModal = document.getElementById('library-modal');
+    const openLibraryBtn = document.getElementById('open-library-btn');
+    const closeLibraryBtn = document.getElementById('close-library-btn');
+    let currentPromptContext = 'my-prompts';
 
     // UI Buttons
     const chatHistoryList = document.getElementById('chat-history-list');
@@ -234,9 +307,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadGlobalPrompts();
 
             // Atualiza UI Profile
-            userNameDisplay.textContent = user.email.split('@')[0];
+            const displayName = user.user_metadata?.name || user.email.split('@')[0];
+            const displayAvatarName = user.user_metadata?.name || user.email;
+
+            userNameDisplay.textContent = displayName;
             userRoleDisplay.textContent = userRole === 'admin' ? 'Administrador' : 'Aluno';
-            userAvatar.src = `https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`;
+            userAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayAvatarName)}&background=6366f1&color=fff`;
             if (logoutBtn) logoutBtn.style.display = 'block';
             if (logoutBtnAi) logoutBtnAi.style.display = 'block';
 
@@ -257,9 +333,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             const dashboardUserName = document.getElementById('dashboard-user-name');
             const dashboardUserRole = document.getElementById('dashboard-user-role');
             const dashboardUserAvatar = document.getElementById('dashboard-user-avatar') as HTMLImageElement;
-            if (dashboardUserName) dashboardUserName.textContent = user.email.split('@')[0];
+            const dropdownUserEmail = document.getElementById('dropdown-user-email');
+            const sidebarUserEmail = document.getElementById('sidebar-user-email');
+            
+            if (dashboardUserName) dashboardUserName.textContent = displayName;
             if (dashboardUserRole) dashboardUserRole.textContent = userRole === 'admin' ? 'Administrador' : 'Aluno';
-            if (dashboardUserAvatar) dashboardUserAvatar.src = `https://ui-avatars.com/api/?name=${user.email}&background=6366f1&color=fff`;
+            if (dashboardUserAvatar) dashboardUserAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(displayAvatarName)}&background=6366f1&color=fff`;
+            if (dropdownUserEmail) dropdownUserEmail.textContent = user.email;
+            if (sidebarUserEmail) sidebarUserEmail.textContent = user.email;
+            
+            const supportWidgetGreetingName = document.getElementById('support-widget-greeting-name');
+            if (supportWidgetGreetingName) supportWidgetGreetingName.textContent = `Olá ${displayName.split(' ')[0]} 👋`;
 
             // Unlock app (with Processing Screen)
             const dashboardContainer = document.getElementById('dashboard-container');
@@ -335,73 +419,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Nova Conversa (Dropdown)
-    const newChatBtn = document.getElementById('new-chat-btn');
-    if (newChatBtn) {
-        newChatBtn.addEventListener('click', () => {
-            currentSessionId = crypto.randomUUID();
-            messagesContainer.innerHTML = `
-                <div class="welcome-screen">
-                    <div class="welcome-bg-glow"></div>
-                    <div class="welcome-hero">
-                        <div class="logo-icon-large logo-pulse">M</div>
-                        <h1 class="welcome-title">Instrutor de Prompt</h1>
-                        <p class="welcome-subtitle">O <strong>Método Motion IA</strong> configurado com as melhores práticas para extrair o máximo do <strong>Google Omni</strong>.</p>
-                    </div>
-                    
-                    <div class="suggestion-grid">
-                        <div class="suggestion-card glass-card">
-                            <i data-lucide="zap" class="suggestion-icon"></i>
-                            <p>Criar um Prompt Novo de forma rápida e fácil.</p>
-                        </div>
-                        <div class="suggestion-card glass-card">
-                            <i data-lucide="wand-2" class="suggestion-icon"></i>
-                            <p>Melhorar um Prompt que já uso e otimizar tempo.</p>
-                        </div>
-                        <div class="suggestion-card glass-card">
-                            <i data-lucide="library" class="suggestion-icon"></i>
-                            <p>Explorar a Biblioteca e acessar Prompts do Método.</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            if (window.lucide) {
-                window.lucide.createIcons({ root: messagesContainer });
+    // Botão nova conversa foi consolidado mais abaixo.
+
+    // Alternar abas do Auth (Dual-Pane)
+    const tabLogin = document.getElementById('tab-login');
+    const tabSignup = document.getElementById('tab-signup');
+    const toggleAuthModeBtnHeader = document.getElementById('toggle-auth-mode-btn'); // For the header button
+
+    function setAuthMode(mode: 'login' | 'signup') {
+        isLoginMode = mode === 'login';
+        
+        if (tabLogin && tabSignup) {
+            if (isLoginMode) {
+                tabLogin.classList.add('active');
+                tabSignup.classList.remove('active');
+            } else {
+                tabSignup.classList.add('active');
+                tabLogin.classList.remove('active');
             }
-            bindSuggestionCards();
+        }
+        
+        if (authSubmitBtn) {
+            authSubmitBtn.textContent = isLoginMode ? 'Entrar na Plataforma' : 'Criar minha Conta';
+        }
+        
+        // Mostra/esconde campos exclusivos de cadastro
+        document.querySelectorAll('.register-only').forEach(el => {
+            (el as HTMLElement).style.display = isLoginMode ? 'none' : 'flex';
         });
+        
+        document.querySelectorAll('.login-only').forEach(el => {
+            (el as HTMLElement).style.display = isLoginMode ? 'flex' : 'none';
+        });
+        
+        const loginMainTitle = document.getElementById('login-main-title');
+        if (loginMainTitle) {
+            loginMainTitle.textContent = isLoginMode ? 'Bem-vindo de volta' : 'Crie sua conta';
+        }
+
+        if (loginSubtitle) {
+            loginSubtitle.textContent = isLoginMode ? 'Insira suas credenciais para acessar a plataforma.' : 'Preencha seus dados para começar a usar a Motion IA.';
+        }
+        
+        if (authError) authError.style.display = 'none';
+        setupAuthUI(); // No-op if old elements are missing
     }
 
-    // Alternar abas do Auth
-    if (toggleAuthBtn && togglePromptText) {
-        toggleAuthBtn.addEventListener('click', () => {
-            isLoginMode = !isLoginMode;
-            authSubmitBtn.textContent = isLoginMode ? 'Entrar' : 'Cadastrar';
-            togglePromptText.textContent = isLoginMode ? "Não tem uma conta?" : "Já tem uma conta?";
-            toggleAuthBtn.textContent = isLoginMode ? "Cadastrar" : "Entrar";
-            
-            // Mostra/esconde campos exclusivos de cadastro
-            document.querySelectorAll('.register-only').forEach(el => {
-                (el as HTMLElement).style.display = isLoginMode ? 'none' : 'flex'; // flex for form-group
-            });
-            
-            document.querySelectorAll('.login-only').forEach(el => {
-                (el as HTMLElement).style.display = isLoginMode ? 'flex' : 'none';
-            });
-            
-            const loginMainTitle = document.getElementById('login-main-title');
-            if (loginMainTitle) {
-                loginMainTitle.textContent = isLoginMode ? 'Entre na sua conta' : 'Crie uma conta';
-            }
+    if (tabLogin) tabLogin.addEventListener('click', () => setAuthMode('login'));
+    if (tabSignup) tabSignup.addEventListener('click', () => setAuthMode('signup'));
+    if (toggleAuthModeBtnHeader) toggleAuthModeBtnHeader.addEventListener('click', () => setAuthMode('signup'));
 
-            if (loginSubtitle) {
-                loginSubtitle.textContent = isLoginMode ? 'Digite seu e-mail abaixo para entrar' : 'Digite seus dados abaixo para se cadastrar';
-            }
-            authError.style.display = 'none';
-            
-            setupAuthUI();
-        });
-    }
 
     // Mostrar/Esconder Senha
     const togglePasswordBtn = document.getElementById('toggle-password');
@@ -521,32 +588,142 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ==========================================
+    // CONTROLE DE VIEWS PRINCIPAIS
+    // ==========================================
+    const inputArea = document.getElementById('input-area');
+    const allChatsView = document.getElementById('all-chats-view');
+    const promptsView = document.getElementById('prompts-view');
+    const myPromptsView = document.getElementById('my-prompts-view');
+
+    function switchView(view) {
+        if (view === 'chat') {
+            if (messagesContainer) messagesContainer.style.display = 'flex';
+            if (inputArea) inputArea.style.display = 'block';
+            if (allChatsView) allChatsView.style.display = 'none';
+            if (promptsView) promptsView.style.display = 'none';
+            if (myPromptsView) myPromptsView.style.display = 'none';
+        } else if (view === 'conversations') {
+            if (messagesContainer) messagesContainer.style.display = 'none';
+            if (inputArea) inputArea.style.display = 'none';
+            if (allChatsView) allChatsView.style.display = 'flex';
+            if (promptsView) promptsView.style.display = 'none';
+            if (myPromptsView) myPromptsView.style.display = 'none';
+        } else if (view === 'prompts') {
+            if (messagesContainer) messagesContainer.style.display = 'none';
+            if (inputArea) inputArea.style.display = 'none';
+            if (allChatsView) allChatsView.style.display = 'none';
+            if (promptsView) promptsView.style.display = 'flex';
+            if (myPromptsView) myPromptsView.style.display = 'none';
+        } else if (view === 'my-prompts') {
+            if (messagesContainer) messagesContainer.style.display = 'none';
+            if (inputArea) inputArea.style.display = 'none';
+            if (allChatsView) allChatsView.style.display = 'none';
+            if (promptsView) promptsView.style.display = 'none';
+            if (myPromptsView) myPromptsView.style.display = 'flex';
+        }
+    }
+
+    // ==========================================
+    // TODAS AS CONVERSAS VIEW
+    // ==========================================
+    const openConversationsBtn = document.getElementById('open-conversations-btn');
+    const allChatsNewBtn = document.getElementById('all-chats-new-btn');
+    const allChatsList = document.getElementById('all-chats-list');
+    
+    if (openConversationsBtn) {
+        openConversationsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            loadAllSessions();
+            switchView('conversations');
+        });
+        
+        if (allChatsNewBtn) {
+            allChatsNewBtn.addEventListener('click', () => {
+                switchView('chat');
+                newChatBtn.click();
+            });
+        }
+    }
+    
+    async function loadAllSessions() {
+        if (!currentUser || !allChatsList) return;
+        allChatsList.innerHTML = '<div style="color: #a1a1aa; padding: 16px;">Carregando...</div>';
+        
+        const { data: sessions, error } = await supabase
+            .from('chat_sessions')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: false });
+            
+        if (error) {
+            console.error("Erro ao carregar todas as sessões:", error);
+            allChatsList.innerHTML = '<div style="color: #ef4444; padding: 16px;">Erro ao carregar conversas.</div>';
+            return;
+        }
+        
+        allChatsList.innerHTML = '';
+        if (sessions.length === 0) {
+            allChatsList.innerHTML = '<div style="color: #a1a1aa; padding: 16px;">Nenhuma conversa encontrada.</div>';
+            return;
+        }
+        
+        sessions.forEach(session => {
+            const item = document.createElement('div');
+            item.className = 'all-chat-item';
+            item.style.cssText = 'padding: 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; border-radius: 8px;';
+            
+            // Relativo (há 4 minutos, etc)
+            const date = new Date(session.created_at);
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            
+            let timeStr = '';
+            if (diffMins < 60) {
+                timeStr = diffMins <= 1 ? 'agora mesmo' : `há ${diffMins} minutos`;
+            } else if (diffHours < 24) {
+                timeStr = diffHours === 1 ? 'há 1 hora' : `há ${diffHours} horas`;
+            } else {
+                timeStr = date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }) + '.';
+            }
+            
+            item.innerHTML = `
+                <span style="color: #e4e4e7; font-size: 15px; font-weight: 500;">${escapeHTML(session.title)}</span>
+                <span style="color: #a1a1aa; font-size: 13px;">${timeStr}</span>
+            `;
+            
+            item.addEventListener('mouseover', () => item.style.background = 'rgba(255,255,255,0.05)');
+            item.addEventListener('mouseout', () => item.style.background = 'transparent');
+            
+            item.addEventListener('click', () => {
+                switchView('chat');
+                loadChatHistory(session.id);
+            });
+            
+            allChatsList.appendChild(item);
+        });
+    }
+
+    // ==========================================
     // NOVA CONVERSA
     // ==========================================
+    const newChatBtn = document.getElementById('new-chat-btn');
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
-            // Gera um novo ID de sessão
+            switchView('chat');
             currentSessionId = crypto.randomUUID();
             
-            // Adiciona a conversa atual na barra lateral se houver mensagens (simplificado)
-            const historyItem = document.createElement('div');
-            historyItem.className = 'history-item';
-            historyItem.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                <span>Nova Conversa</span>
-            `;
             if (chatHistoryList) {
-                // Remove active anterior
+                // Apenas remove a seleção anterior. 
+                // A sessão será salva e exibida na barra lateral apenas quando o usuário enviar a 1ª mensagem!
                 document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-                historyItem.classList.add('active');
-                chatHistoryList.prepend(historyItem);
             }
 
-            // Limpa as mensagens atuais e volta à tela de boas-vindas
-            messagesContainer.innerHTML = '';
+            // Limpa as mensagens atuais preservando a welcome-screen
+            document.querySelectorAll('.message').forEach(m => m.remove());
             if (welcomeScreen) {
                 welcomeScreen.style.display = 'flex';
-                messagesContainer.appendChild(welcomeScreen);
             }
         });
     }
@@ -665,25 +842,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             wGlobalContent.querySelectorAll('.delete-prompt-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    if (!confirm('Deseja realmente excluir este prompt global?')) return;
-                    
                     const target = e.currentTarget as HTMLElement;
                     const id = target.dataset.id;
                     
-                    try {
-                        const { data, error } = await supabase.from('warehouse_prompts').delete().eq('id', id).select();
-                        if (error) throw error;
-                        
-                        if (!data || data.length === 0) {
-                            alert('Erro: O prompt não foi excluído. Verifique se as Políticas de Segurança (RLS) da tabela "warehouse_prompts" no Supabase permitem a operação de DELETE para o seu usuário.');
-                            return;
+                    showConfirmDelete('Apagar Prompt', 'Deseja realmente excluir este prompt global?', async () => {
+                        try {
+                            const { data, error } = await supabase.from('warehouse_prompts').delete().eq('id', id).select();
+                            if (error) throw error;
+                            
+                            if (!data || data.length === 0) {
+                                alert('Erro: O prompt não foi excluído. Verifique se as Políticas de Segurança (RLS).');
+                                return;
+                            }
+                            
+                            loadGlobalPrompts();
+                        } catch (err) {
+                            console.error('Erro ao deletar:', err);
+                            alert('Erro ao excluir prompt.');
                         }
-                        
-                        loadGlobalPrompts();
-                    } catch (err) {
-                        console.error('Erro ao deletar:', err);
-                        alert('Erro ao excluir prompt.');
-                    }
+                    });
                 });
             });
 
@@ -777,23 +954,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             wMyPromptsContent.querySelectorAll('.delete-my-prompt-btn').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    if (!confirm('Deseja realmente excluir este prompt?')) return;
-                    
                     const target = e.currentTarget as HTMLElement;
                     const id = target.dataset.id;
                     
-                    try {
-                        const { data, error } = await supabase.from('saved_prompts').delete().eq('id', id).select();
-                        if (error) throw error;
-                        if (!data || data.length === 0) {
-                            alert('A exclusão falhou silenciosamente. Você precisa acessar o Supabase, ir em "Authentication" > "Policies" (ou "Table Editor" > "RLS") e adicionar uma política que permita a operação DELETE na tabela saved_prompts!');
-                        } else {
-                            loadMyPrompts();
+                    showConfirmDelete('Apagar Prompt', 'Deseja realmente excluir este prompt?', async () => {
+                        try {
+                            const { data, error } = await supabase.from('saved_prompts').delete().eq('id', id).select();
+                            if (error) throw error;
+                            if (!data || data.length === 0) {
+                                alert('A exclusão falhou silenciosamente.');
+                            } else {
+                                loadMyPrompts();
+                            }
+                        } catch (err) {
+                            console.error('Erro ao deletar:', err);
+                            alert('Erro ao excluir prompt.');
                         }
-                    } catch (err) {
-                        console.error('Erro ao deletar:', err);
-                        alert('Erro ao excluir prompt.');
-                    }
+                    });
                 });
             });
 
@@ -854,37 +1031,64 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // (Old Warehouse Modal listeners removed because Warehouse is now a sidebar)
 
-    // Warehouse Tabs
-    wTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            wTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            
-            const targetId = tab.dataset.target;
-            wGlobalContent.style.display = targetId === 'warehouse-content-global' ? 'flex' : 'none';
-            wMyPromptsContent.style.display = targetId === 'warehouse-content-my-prompts' ? 'flex' : 'none';
+    // Library View Logic
+    const toggleLibraryBtn = document.getElementById('toggle-library-btn');
+    const librarySubItems = document.getElementById('library-sub-items');
+    const libraryChevron = document.getElementById('library-chevron');
+    // openLibraryBtn is already declared on line 256
+    const openMyPromptsBtn = document.getElementById('open-my-prompts-btn');
 
-            // Visibilidade do botão de adicionar prompt
-            if (targetId === 'warehouse-content-global') {
-                addPromptBtn.style.display = userRole === 'admin' ? 'flex' : 'none';
-            } else {
-                addPromptBtn.style.display = currentUser ? 'flex' : 'none';
-            }
+    if (toggleLibraryBtn && librarySubItems && libraryChevron) {
+        toggleLibraryBtn.addEventListener('click', () => {
+            const isExpanded = librarySubItems.style.display === 'flex';
+            librarySubItems.style.display = isExpanded ? 'none' : 'flex';
+            libraryChevron.style.transform = isExpanded ? 'rotate(0deg)' : 'rotate(180deg)';
         });
-    });
+    }
 
-    // Abrir Add Prompt
-    addPromptBtn.addEventListener('click', () => {
-        document.getElementById('add-prompt-id').value = '';
-        addPromptForm.reset();
-        
-        // Mantém a categoria sempre visível, para o usuário organizar melhor, mesmo nos Meus Prompts
-        const categoryGroup = document.getElementById('add-prompt-category').parentElement;
-        categoryGroup.style.display = 'block';
+    if (openLibraryBtn) {
+        openLibraryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('prompts');
+        });
+    }
 
-        document.getElementById('modal-prompt-title').innerText = 'Adicionar Novo Prompt';
-        addPromptModal.classList.add('active');
-    });
+    if (openMyPromptsBtn) {
+        openMyPromptsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchView('my-prompts');
+        });
+    }
+    
+    // Abrir Add Prompt (Meus Prompts)
+    if (addPromptBtn) {
+        addPromptBtn.addEventListener('click', () => {
+            currentPromptContext = 'my-prompts';
+            document.getElementById('add-prompt-id').value = '';
+            addPromptForm.reset();
+            
+            const categoryGroup = document.getElementById('add-prompt-category').parentElement;
+            if (categoryGroup) categoryGroup.style.display = 'block';
+
+            document.getElementById('modal-prompt-title').textContent = 'Adicionar Novo Prompt';
+            addPromptModal.style.display = 'flex';
+        });
+    }
+
+    // Abrir Add Prompt (Global)
+    if (addGlobalPromptBtn) {
+        addGlobalPromptBtn.addEventListener('click', () => {
+            currentPromptContext = 'global';
+            document.getElementById('add-prompt-id').value = '';
+            addPromptForm.reset();
+            
+            const categoryGroup = document.getElementById('add-prompt-category').parentElement;
+            if (categoryGroup) categoryGroup.style.display = 'block';
+
+            document.getElementById('modal-prompt-title').textContent = 'Adicionar Prompt Global';
+            addPromptModal.style.display = 'flex';
+        });
+    }
     
     // Recolher da conversa
     const fetchFromChatBtn = document.getElementById('fetch-from-chat-btn');
@@ -957,8 +1161,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     addPromptForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Verifica se está na aba global e é admin, ou aba meus prompts
-        const isGlobal = document.querySelector('.w-tab.active').dataset.target === 'warehouse-content-global';
+        // Verifica contexto global
+        const isGlobal = currentPromptContext === 'global';
         if (isGlobal && userRole !== 'admin') return;
 
         const id = document.getElementById('add-prompt-id').value;
@@ -1134,6 +1338,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         const text = chatInput.value.trim();
         if (text.length === 0) return;
         
+        // Verifica o limite de prompts se for aluno
+        if (userRole !== 'admin') {
+            const today = new Date();
+            // Usamos a data local (ano-mes-dia) para resetar a meia-noite local
+            const dateString = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
+            const userId = currentUser ? currentUser.id : 'visitante';
+            const storageKey = `prompt_usage_${userId}`;
+            
+            let usageData = { date: dateString, count: 0 };
+            const stored = localStorage.getItem(storageKey);
+            
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.date === dateString) {
+                        usageData = parsed;
+                    }
+                } catch (e) {
+                    console.error("Erro ao ler limite de uso", e);
+                }
+            }
+            
+            if (usageData.count >= 5) {
+                alert("Você atingiu o limite de 5 prompts por dia. Seu limite será renovado à meia-noite!");
+                return;
+            }
+            
+            // Incrementa o uso
+            usageData.count += 1;
+            localStorage.setItem(storageKey, JSON.stringify(usageData));
+        }
+
         const currentWelcomeScreen = document.querySelector('.welcome-screen') as HTMLElement;
         if (currentWelcomeScreen) currentWelcomeScreen.style.display = 'none';
 
@@ -1142,7 +1378,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         chatInput.value = '';
         chatInput.style.height = 'auto';
-        sendBtn.setAttribute('disabled', 'true');
+        chatInput.disabled = true;
+        chatInput.placeholder = 'Gerando resposta...';
+        sendBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = 'flex';
         scrollToBottom();
         getAIResponse(text);
     }
@@ -1151,33 +1390,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message user-message';
         
-        const avatarDiv = document.createElement('div');
-        avatarDiv.className = 'message-avatar';
-        const avatarUrl = currentUser ? `https://ui-avatars.com/api/?name=${currentUser.email}&background=6366f1&color=fff` : 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff';
-        avatarDiv.innerHTML = `<img src="${avatarUrl}" alt="User" style="width:32px;height:32px;border-radius:8px;">`;
-        
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
         contentDiv.innerHTML = `<p>${escapeHTML(text)}</p>`;
         
-        messageDiv.appendChild(avatarDiv);
         messageDiv.appendChild(contentDiv);
         
         messagesContainer.appendChild(messageDiv);
     }
 
     async function getAIResponse(userText) {
+        if (currentAbortController) currentAbortController.abort();
+        currentAbortController = new AbortController();
+        const signal = currentAbortController.signal;
         const typingDiv = document.createElement('div');
         typingDiv.className = 'message ai-message typing-container';
         typingDiv.innerHTML = `
-            <div class="message-avatar">
-                <div class="logo-icon-small">M</div>
-            </div>
             <div class="message-content">
-                <div class="typing-indicator">
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
-                    <div class="typing-dot"></div>
+                <div class="typing-indicator" style="display: flex; align-items: center; justify-content: flex-start; padding-left: 8px;">
+                    <div class="logo-spin" style="font-size: 22px; font-weight: 700; color: var(--accent-primary);">&amp;</div>
                 </div>
             </div>
         `;
@@ -1192,7 +1423,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     aluno_id: alunoId,
                     sessao_id: currentSessionId, // Envia o ID único da conversa para manter histórico
                     mensagem: userText
-                })
+                }),
+                signal
             });
 
             if (!response.ok) throw new Error('Erro na comunicação');
@@ -1219,18 +1451,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             typingDiv.remove();
             
+            const formattedContent = formatAIResponse(responseText);
+            
             const responseDiv = document.createElement('div');
             responseDiv.className = 'message ai-message';
-            responseDiv.innerHTML = `
+            
+            const avatarHtml = `
                 <div class="message-avatar">
-                    <div class="logo-icon-small">M</div>
-                </div>
-                <div class="message-content">
-                    ${formatAIResponse(responseText)}
+                    <div class="logo-icon-small">&amp;</div>
                 </div>
             `;
+            const contentContainer = document.createElement('div');
+            contentContainer.className = 'message-content';
+            
+            responseDiv.innerHTML = avatarHtml;
+            responseDiv.appendChild(contentContainer);
             messagesContainer.appendChild(responseDiv);
-            scrollToBottom();
+            
+            await typeHTML(contentContainer, formattedContent, 10, scrollToBottom);
 
         } catch (error) {
             console.error('Webhook error:', error);
@@ -1238,21 +1476,116 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const errorDiv = document.createElement('div');
             errorDiv.className = 'message ai-message';
-            errorDiv.innerHTML = `
-                <div class="message-avatar">
-                    <div class="logo-icon-small" style="background: #ef4444;">!</div>
-                </div>
-                <div class="message-content">
-                    <p style="color: #ef4444;">Desculpe, ocorreu um erro ao conectar com o servidor. Tente novamente.</p>
-                </div>
-            `;
+            
+            if (error.name === 'AbortError') {
+                errorDiv.innerHTML = `
+                    <div class="message-content" style="width: 100%;">
+                        <div style="border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.02); margin-top: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97757" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                <span style="font-size: 14px; font-weight: 500;">A resposta foi interrompida.</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                errorDiv.innerHTML = `
+                    <div class="message-avatar">
+                        <div class="logo-icon-small" style="background: #ef4444;">!</div>
+                    </div>
+                    <div class="message-content">
+                        <p style="color: #ef4444;">Desculpe, ocorreu um erro ao conectar com o servidor. Tente novamente.</p>
+                    </div>
+                `;
+            }
             messagesContainer.appendChild(errorDiv);
             scrollToBottom();
+        } finally {
+            chatInput.disabled = false;
+            chatInput.placeholder = 'Converse com o Instrutor de Prompt...';
+            sendBtn.style.display = 'flex';
+            sendBtn.setAttribute('disabled', 'true');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+            chatInput.focus();
+            currentAbortController = null;
         }
     }
 
     function scrollToBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    // Custom confirm modal
+    function showConfirmDelete(title, message, onConfirm) {
+        const modal = document.getElementById('confirm-modal');
+        if (!modal) return;
+        
+        const h3 = modal.querySelector('h3');
+        const p = modal.querySelector('p');
+        if (h3) h3.textContent = title;
+        if (p) p.textContent = message;
+        
+        modal.classList.add('active');
+        
+        const cancelBtn = document.getElementById('confirm-cancel-btn');
+        const deleteBtn = document.getElementById('confirm-delete-btn');
+        
+        const cleanup = () => {
+            modal.classList.remove('active');
+            const newCancel = cancelBtn.cloneNode(true);
+            const newDelete = deleteBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+            deleteBtn.parentNode.replaceChild(newDelete, deleteBtn);
+        };
+        
+        cancelBtn.addEventListener('click', cleanup);
+        deleteBtn.addEventListener('click', () => {
+            cleanup();
+            onConfirm();
+        });
+    }
+
+    // Custom prompt modal
+    function showPromptModal(title, defaultValue, onSubmit) {
+        const modal = document.getElementById('prompt-modal');
+        if (!modal) return;
+        
+        const h3 = document.getElementById('prompt-title');
+        const input = document.getElementById('prompt-input') as HTMLInputElement;
+        if (h3) h3.textContent = title;
+        if (input) {
+            input.value = defaultValue;
+        }
+        
+        modal.classList.add('active');
+        if (input) input.focus();
+        
+        const cancelBtn = document.getElementById('prompt-cancel-btn');
+        const submitBtn = document.getElementById('prompt-submit-btn');
+        
+        const cleanup = () => {
+            modal.classList.remove('active');
+            const newCancel = cancelBtn.cloneNode(true);
+            const newSubmit = submitBtn.cloneNode(true);
+            cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+            submitBtn.parentNode.replaceChild(newSubmit, submitBtn);
+        };
+        
+        cancelBtn.addEventListener('click', cleanup);
+        submitBtn.addEventListener('click', () => {
+            const val = input ? input.value : '';
+            cleanup();
+            onSubmit(val);
+        });
+        
+        // Permite salvar com Enter
+        const onEnter = (e) => {
+            if (e.key === 'Enter') {
+                submitBtn.click();
+                input.removeEventListener('keydown', onEnter);
+            }
+        };
+        input.addEventListener('keydown', onEnter);
     }
 
     function formatAIResponse(text) {
@@ -1344,8 +1677,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { data: sessions, error } = await supabase
             .from('chat_sessions')
             .select('*')
+            .eq('user_id', currentUser.id)
             .order('is_pinned', { ascending: false })
-            .order('created_at', { ascending: false });
+            .order('created_at', { ascending: false })
+            .limit(10);
         
         if (error) {
             console.error("Erro ao carregar sessões:", error);
@@ -1356,6 +1691,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sessions.forEach(session => {
             const item = document.createElement('div');
             item.className = `history-item ${session.id === currentSessionId ? 'active' : ''}`;
+            item.dataset.sessionId = session.id;
             item.innerHTML = `
                 <div class="history-item-content">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${session.is_pinned ? '#3b82f6' : 'currentColor'}" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
@@ -1381,24 +1717,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Renomear
             item.querySelector('.rename-btn').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const newTitle = prompt("Novo nome da conversa:", session.title);
-                if (newTitle && newTitle.trim()) {
-                    await supabase.from('chat_sessions').update({ title: newTitle.trim() }).eq('id', session.id);
-                    loadSessions();
-                }
+                showPromptModal("Novo nome da conversa:", session.title, async (newTitle) => {
+                    if (newTitle && newTitle.trim()) {
+                        await supabase.from('chat_sessions').update({ title: newTitle.trim() }).eq('id', session.id);
+                        loadSessions();
+                    }
+                });
             });
 
             // Apagar
             item.querySelector('.delete-btn').addEventListener('click', async (e) => {
                 e.stopPropagation();
-                if (confirm("Tem certeza que deseja apagar esta conversa?")) {
+                showConfirmDelete('Apagar chat', 'Tem certeza que deseja excluir este chat?', async () => {
+                    item.remove();
                     await supabase.from('chat_sessions').delete().eq('id', session.id);
                     if (currentSessionId === session.id) {
                         newChatBtn.click();
-                    } else {
-                        loadSessions();
                     }
-                }
+                });
             });
 
             chatHistoryList.appendChild(item);
@@ -1407,8 +1743,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     async function loadChatHistory(sessionId) {
         currentSessionId = sessionId;
-        loadSessions(); // Atualiza UI active
-        messagesContainer.innerHTML = '';
+        
+        // Atualiza UI da sidebar sem recarregar do banco
+        document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
+        const activeItem = document.querySelector(`.history-item[data-session-id="${sessionId}"]`);
+        if (activeItem) activeItem.classList.add('active');
+        
+        document.querySelectorAll('.message').forEach(m => m.remove());
         if (welcomeScreen) welcomeScreen.style.display = 'none';
 
         const { data: messages } = await supabase
@@ -1417,25 +1758,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             .eq('session_id', sessionId)
             .order('created_at', { ascending: true });
 
-        if (messages) {
+        if (messages && messages.length > 0) {
+            const fragment = document.createDocumentFragment();
             messages.forEach(msg => {
                 if (msg.role === 'user') {
-                    appendUserMessage(msg.content);
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message user-message';
+                    messageDiv.innerHTML = `
+                        <div class="message-content">
+                            <p>${escapeHTML(msg.content)}</p>
+                        </div>
+                        <div class="message-avatar">
+                            <img src="${userAvatar.src}" alt="User">
+                        </div>
+                    `;
+                    fragment.appendChild(messageDiv);
                 } else {
                     const responseDiv = document.createElement('div');
                     responseDiv.className = 'message ai-message';
                     responseDiv.innerHTML = `
                         <div class="message-avatar">
-                            <div class="logo-icon-small">M</div>
+                            <div class="logo-icon-small">&amp;</div>
                         </div>
                         <div class="message-content">
                             ${formatAIResponse(msg.content)}
                         </div>
                     `;
-                    messagesContainer.appendChild(responseDiv);
+                    fragment.appendChild(responseDiv);
                 }
             });
+            messagesContainer.appendChild(fragment);
             scrollToBottom();
+        } else {
+            if (welcomeScreen) welcomeScreen.style.display = 'flex';
         }
     }
 
@@ -1685,23 +2040,93 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // User: Toggle Widget
+    function openSupportWidget() {
+        if (supportChatWindow) supportChatWindow.style.display = 'flex';
+        if (supportIconOpen) (supportIconOpen as HTMLElement).style.display = 'none';
+        if (supportIconClose) (supportIconClose as HTMLElement).style.display = 'block';
+        loadUserMessages();
+        // Polling for new messages
+        if (supportPollingInterval) clearInterval(supportPollingInterval);
+        supportPollingInterval = window.setInterval(loadUserMessages, 3000);
+        
+        // Close profile menus if open
+        const profileDropdownMenu = document.getElementById('profile-dropdown-menu');
+        const userProfileBtn = document.getElementById('user-profile-btn');
+        const sidebarUserProfileMenu = document.getElementById('sidebar-user-profile-menu');
+        const sidebarUserProfileBtn = document.getElementById('sidebar-user-profile-btn');
+        if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
+        if (userProfileBtn) userProfileBtn.classList.remove('active');
+        if (sidebarUserProfileMenu) sidebarUserProfileMenu.classList.remove('show');
+        if (sidebarUserProfileBtn) sidebarUserProfileBtn.classList.remove('active');
+    }
+
     if (supportWidgetBtn) {
         supportWidgetBtn.addEventListener('click', async () => {
             const isClosed = supportChatWindow?.style.display === 'none' || supportChatWindow?.style.display === '';
             if (isClosed) {
-                if (supportChatWindow) supportChatWindow.style.display = 'flex';
-                if (supportIconOpen) (supportIconOpen as HTMLElement).style.display = 'none';
-                if (supportIconClose) (supportIconClose as HTMLElement).style.display = 'block';
-                await loadUserMessages();
-                // Polling for new messages
-                if (supportPollingInterval) clearInterval(supportPollingInterval);
-                supportPollingInterval = window.setInterval(loadUserMessages, 3000);
+                openSupportWidget();
             } else {
                 if (supportChatWindow) supportChatWindow.style.display = 'none';
                 if (supportIconOpen) (supportIconOpen as HTMLElement).style.display = 'block';
                 if (supportIconClose) (supportIconClose as HTMLElement).style.display = 'none';
                 if (supportPollingInterval) clearInterval(supportPollingInterval);
             }
+        });
+    }
+
+    const helpBtn = document.getElementById('help-btn');
+    const menuHelpBtn = document.getElementById('menu-help-btn');
+    if (helpBtn) {
+        helpBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openSupportWidget();
+        });
+    }
+    if (menuHelpBtn) {
+        menuHelpBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openSupportWidget();
+        });
+    }
+
+    // Support Widget Internal Navigation
+    const supportHomeView = document.getElementById('support-home-view');
+    const supportChatView = document.getElementById('support-chat-view');
+    const navBtnHome = document.getElementById('nav-btn-home');
+    const navBtnMessages = document.getElementById('nav-btn-messages');
+    const supportOpenChatBtn = document.getElementById('support-open-chat-btn');
+    const supportBackHomeBtn = document.getElementById('support-back-home-btn');
+    const supportWidgetCloseBtn = document.getElementById('support-widget-close-btn');
+
+    function showSupportHomeView() {
+        if (supportHomeView) supportHomeView.style.display = 'flex';
+        if (supportChatView) supportChatView.style.display = 'none';
+        if (navBtnHome) navBtnHome.classList.add('active');
+        if (navBtnMessages) navBtnMessages.classList.remove('active');
+    }
+
+    function showSupportChatView() {
+        if (supportHomeView) supportHomeView.style.display = 'none';
+        if (supportChatView) supportChatView.style.display = 'flex';
+        if (navBtnHome) navBtnHome.classList.remove('active');
+        if (navBtnMessages) navBtnMessages.classList.add('active');
+        // Scroll to bottom when opening chat
+        setTimeout(() => {
+            if (supportChatBody) supportChatBody.scrollTop = supportChatBody.scrollHeight;
+        }, 50);
+    }
+
+    if (supportOpenChatBtn) supportOpenChatBtn.addEventListener('click', showSupportChatView);
+    if (navBtnMessages) navBtnMessages.addEventListener('click', showSupportChatView);
+    if (supportBackHomeBtn) supportBackHomeBtn.addEventListener('click', showSupportHomeView);
+    if (navBtnHome) navBtnHome.addEventListener('click', showSupportHomeView);
+
+    if (supportWidgetCloseBtn) {
+        supportWidgetCloseBtn.addEventListener('click', () => {
+            if (supportChatWindow) supportChatWindow.style.display = 'none';
+            if (supportIconOpen) (supportIconOpen as HTMLElement).style.display = 'block';
+            if (supportIconClose) (supportIconClose as HTMLElement).style.display = 'none';
+            if (supportPollingInterval) clearInterval(supportPollingInterval);
         });
     }
 
@@ -1984,6 +2409,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const sidebarUserProfileBtn = document.getElementById('sidebar-user-profile-btn');
+    const sidebarUserProfileMenu = document.getElementById('sidebar-user-profile-menu');
+    const menuLogoutBtn = document.getElementById('menu-logout-btn');
+
+    if (sidebarUserProfileBtn && sidebarUserProfileMenu) {
+        // Toggle sidebar dropdown on click
+        sidebarUserProfileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sidebarUserProfileBtn.classList.toggle('active');
+            sidebarUserProfileMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!sidebarUserProfileBtn.contains(e.target as Node) && !sidebarUserProfileMenu.contains(e.target as Node)) {
+                sidebarUserProfileBtn.classList.remove('active');
+                sidebarUserProfileMenu.classList.remove('show');
+            }
+        });
+    }
+
     const handleLogout = async (e) => {
         e.preventDefault();
         // Clear current user
@@ -2014,4 +2460,114 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (logoutBtnAi) {
         logoutBtnAi.addEventListener('click', handleLogout);
     }
+    if (menuLogoutBtn) {
+        menuLogoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // ==========================================
+    // CONFIGURAÇÕES E TEMA (Aparência)
+    // ==========================================
+    const openSettingsBtn = document.getElementById('open-settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsBtn = document.getElementById('close-settings-btn');
+    const themeButtons = document.querySelectorAll('.theme-toggle-btn');
+
+    // Abre o modal
+    if (openSettingsBtn && settingsModal) {
+        openSettingsBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            settingsModal.classList.add('active');
+            if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
+        });
+    }
+
+    // Fecha o modal
+    if (closeSettingsBtn && settingsModal) {
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('active');
+        });
+    }
+
+    // Lógica do Tema
+    const applyTheme = (themeValue) => {
+        const root = document.documentElement;
+        if (themeValue === 'system') {
+            const isSystemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            root.setAttribute('data-theme', isSystemDark ? 'dark' : 'light');
+        } else {
+            root.setAttribute('data-theme', themeValue);
+        }
+        
+        // Atualiza a UI dos botões
+        themeButtons.forEach(btn => {
+            if (btn.getAttribute('data-theme-value') === themeValue) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    };
+
+    // Carrega tema salvo ou usa 'dark' (padrão antigo do app)
+    const savedTheme = localStorage.getItem('app_theme') || 'dark';
+    applyTheme(savedTheme);
+
+    // Adiciona evento nos botões
+    themeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const themeValue = btn.getAttribute('data-theme-value');
+            if (themeValue) {
+                localStorage.setItem('app_theme', themeValue);
+                applyTheme(themeValue);
+            }
+        });
+    });
+
+    // Escuta mudanças no tema do sistema se estiver no modo 'system'
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (localStorage.getItem('app_theme') === 'system') {
+            applyTheme('system');
+        }
+    });
+
+    async function typeHTML(element, html, speed = 10, onProgress = null) {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        element.innerHTML = '';
+        
+        async function typeNode(node, parent) {
+            if (node.nodeType === Node.TEXT_NODE) {
+                const text = node.textContent || '';
+                const textNode = document.createTextNode('');
+                parent.appendChild(textNode);
+                for (let i = 0; i < text.length; i++) {
+                    textNode.textContent += text[i];
+                    if (onProgress) onProgress();
+                    await new Promise(r => setTimeout(r, speed));
+                }
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const el = node;
+                const newEl = document.createElement(el.tagName);
+                Array.from(el.attributes).forEach(attr => newEl.setAttribute(attr.name, attr.value));
+                parent.appendChild(newEl);
+                
+                // Exibir instantaneamente botões e SVGs para não quebrar UI
+                if (el.tagName === 'BUTTON' || el.tagName === 'SVG' || el.classList.contains('box-header')) {
+                    newEl.innerHTML = el.innerHTML;
+                    if (onProgress) onProgress();
+                    await new Promise(r => setTimeout(r, speed * 2));
+                } else {
+                    for (let i = 0; i < el.childNodes.length; i++) {
+                        await typeNode(el.childNodes[i], newEl);
+                    }
+                }
+            }
+        }
+        
+        for (let i = 0; i < tempDiv.childNodes.length; i++) {
+            await typeNode(tempDiv.childNodes[i], element);
+        }
+        if (onProgress) onProgress();
+    }
+
 });
