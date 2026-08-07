@@ -14,51 +14,24 @@
     <!-- Login Page -->
     <div class="login-page" id="login-page">
         <div class="split-layout">
-            <!-- Left Panel: Information & Value Proposition -->
-            <div class="split-left">
-                <div class="left-content">
-                    <div class="logo-container" style="display: flex; align-items: center; gap: 12px; margin-bottom: 40px;">
-                        <div class="logo-icon-large logo-pulse" style="width: 40px; height: 40px; font-size: 20px;">&</div>
-                        <span class="logo-text" style="font-size: 24px; font-weight: 800; color: #fff;">Método Motion IA</span>
-                    </div>
-                    
-                    <h1 class="hero-title">A nova era da<br><span class="text-gradient">Inteligência Artificial</span></h1>
-                    <p class="hero-subtitle">Automatize processos, escale suas vendas e tenha um assistente inteligente 24/7 integrado ao seu negócio.</p>
-                    
-                    <div class="feature-cards">
-                        <div class="feature-card">
-                            <i data-lucide="zap" class="feature-icon text-cyan-400"></i>
-                            <div>
-                                <h3>Automação Rápida</h3>
-                                <p>Crie fluxos complexos em minutos, sem precisar codificar.</p>
-                            </div>
-                        </div>
-                        <div class="feature-card">
-                            <i data-lucide="shield-check" class="feature-icon text-green-400"></i>
-                            <div>
-                                <h3>Segurança Total</h3>
-                                <p>Seus dados e os dados dos seus clientes protegidos com criptografia de ponta a ponta.</p>
-                            </div>
-                        </div>
-                        <div class="feature-card">
-                            <i data-lucide="bar-chart-2" class="feature-icon text-blue-400"></i>
-                            <div>
-                                <h3>Analytics Avançado</h3>
-                                <p>Entenda o comportamento da sua IA com relatórios detalhados.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Animated Background for Left Panel -->
-                <div class="animated-bg-shapes">
-                    <div class="shape shape-1"></div>
-                    <div class="shape shape-2"></div>
-                </div>
-            </div>
-
             <!-- Right Panel: Form (Login/Signup) -->
             <div class="split-right">
-                <div class="right-content">
+                <!-- Premium Animated Gradient Background -->
+                <div class="premium-bg">
+                    <div class="premium-bg-shape shape-1"></div>
+                    <div class="premium-bg-shape shape-2"></div>
+                    <div class="premium-bg-shape shape-3"></div>
+                </div>
+                
+                <div class="right-content glass-card" style="position: relative; z-index: 10;">
+                    <div class="logo-container" style="display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 40px;">
+                        <div class="logo-icon-large logo-pulse" style="width: 56px; height: 56px; font-size: 32px; background: linear-gradient(135deg, #00f2fe, #4facfe); box-shadow: 0 12px 32px rgba(79, 172, 254, 0.4); color: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-family: 'Inter', sans-serif;">&</div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <span class="logo-text" style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1px; margin-bottom: -4px;">Plataforma</span>
+                            <span class="logo-text" style="font-size: 26px; font-weight: 800; color: #fff; letter-spacing: -0.5px;">Método Motion I.A.</span>
+                        </div>
+                    </div>
+
                     <div class="auth-tabs">
                         <button type="button" class="auth-tab active" id="tab-login">Acessar</button>
                         <button type="button" class="auth-tab" id="tab-signup">Criar Conta</button>
@@ -79,25 +52,27 @@
                                 <input type="email" id="auth-email" required class="modern-input" placeholder="seu@email.com">
                             </div>
                             
-                            <div class="form-group input-with-icon">
-                                <label for="auth-password" class="modern-label">Senha</label>
-                                <div class="password-wrapper" style="position: relative;">
-                                    <input type="password" id="auth-password" required minlength="6" class="modern-input pr-10" placeholder="••••••••">
-                                    <button type="button" class="toggle-password-btn" id="toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer;">
-                                        <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
-                                    </button>
-                                </div>
-                                <div id="password-strength-container" class="register-only" style="display: none; margin-top: 8px;">
-                                    <div class="strength-bar-bg" style="width: 100%; height: 4px; background: #374151; border-radius: 2px; overflow: hidden;">
-                                        <div id="strength-bar-fill" class="strength-bar-fill" style="width: 0%; height: 100%; background: #ef4444; transition: width 0.3s, background-color 0.3s;"></div>
+                            <div class="password-grid" id="password-grid">
+                                <div class="form-group input-with-icon">
+                                    <label for="auth-password" class="modern-label">Senha</label>
+                                    <div class="password-wrapper" style="position: relative; width: 100%; display: block;">
+                                        <input type="password" id="auth-password" required minlength="6" class="modern-input pr-10" placeholder="••••••••" style="width: 100%; box-sizing: border-box;">
+                                        <button type="button" class="toggle-password-btn" id="toggle-password" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #9ca3af; cursor: pointer;">
+                                            <i data-lucide="eye" style="width: 18px; height: 18px;"></i>
+                                        </button>
                                     </div>
-                                    <div class="strength-text" id="strength-text" style="font-size: 11px; color: #9ca3af; margin-top: 4px;">Força da Senha</div>
+                                    <div id="password-strength-container" class="register-only" style="display: none; margin-top: 8px;">
+                                        <div class="strength-bar-bg" style="width: 100%; height: 4px; background: #374151; border-radius: 2px; overflow: hidden;">
+                                            <div id="strength-bar-fill" class="strength-bar-fill" style="width: 0%; height: 100%; background: #ef4444; transition: width 0.3s, background-color 0.3s;"></div>
+                                        </div>
+                                        <div class="strength-text" id="strength-text" style="font-size: 11px; color: #9ca3af; margin-top: 4px; white-space: nowrap;">Força da Senha</div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="form-group register-only" style="display: none;">
-                                <label for="auth-confirm-password" class="modern-label">Confirmar Senha</label>
-                                <input type="password" id="auth-confirm-password" minlength="6" class="modern-input" placeholder="••••••••">
+                                
+                                <div class="form-group register-only" style="display: none;">
+                                    <label for="auth-confirm-password" class="modern-label">Confirmar Senha</label>
+                                    <input type="password" id="auth-confirm-password" minlength="6" class="modern-input" placeholder="••••••••" style="width: 100%; box-sizing: border-box;">
+                                </div>
                             </div>
                             
                             <button type="submit" class="modern-submit-btn" id="auth-submit-btn">

@@ -452,13 +452,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             (el as HTMLElement).style.display = isLoginMode ? 'flex' : 'none';
         });
         
+        const passwordGrid = document.getElementById('password-grid');
+        if (passwordGrid) {
+            if (isLoginMode) {
+                passwordGrid.classList.remove('is-register');
+            } else {
+                passwordGrid.classList.add('is-register');
+            }
+        }
+        
         const loginMainTitle = document.getElementById('login-main-title');
         if (loginMainTitle) {
             loginMainTitle.textContent = isLoginMode ? 'Bem-vindo de volta' : 'Crie sua conta';
         }
 
         if (loginSubtitle) {
-            loginSubtitle.textContent = isLoginMode ? 'Insira suas credenciais para acessar a plataforma.' : 'Preencha seus dados para começar a usar a Motion IA.';
+            loginSubtitle.textContent = isLoginMode ? 'Insira suas credenciais para acessar a plataforma.' : 'Recomendamos que utilize o e-mail da Green para criar sua conta.';
         }
         
         if (authError) authError.style.display = 'none';
