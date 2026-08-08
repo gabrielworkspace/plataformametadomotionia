@@ -1428,8 +1428,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
             
-            if (usageData.count >= 5) {
-                alert("Você atingiu o limite gratuito de 5 gerações de prompts. Você só poderá gerar novos prompts após 24 horas (ou à meia-noite)!");
+            if (usageData.count >= 3) {
+                alert("Você atingiu o limite gratuito de 3 gerações de prompts. Você só poderá gerar novos prompts após 24 horas (ou à meia-noite)!");
                 return;
             }
             
@@ -2547,7 +2547,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ==========================================
     const openSettingsBtn = document.getElementById('open-settings-btn');
     const settingsBtn = document.getElementById('settings-btn');
-    const menuSettingsBtn = document.getElementById('menu-settings-btn');
+    const menuConfigBtn = document.getElementById('menu-config-btn');
     
     const settingsModal = document.getElementById('settings-modal');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
@@ -2559,12 +2559,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
         const dashboardDropdown = document.getElementById('profile-dropdown-menu');
         if (dashboardDropdown) dashboardDropdown.classList.remove('show');
+        const sidebarUserProfileMenu = document.getElementById('sidebar-user-profile-menu');
+        if (sidebarUserProfileMenu) sidebarUserProfileMenu.classList.remove('show');
     };
 
     // Abre o modal
     if (openSettingsBtn && settingsModal) openSettingsBtn.addEventListener('click', openSettings);
     if (settingsBtn && settingsModal) settingsBtn.addEventListener('click', openSettings);
-    if (menuSettingsBtn && settingsModal) menuSettingsBtn.addEventListener('click', openSettings);
+    if (menuConfigBtn && settingsModal) menuConfigBtn.addEventListener('click', openSettings);
 
     // Fecha o modal
     if (closeSettingsBtn && settingsModal) {
