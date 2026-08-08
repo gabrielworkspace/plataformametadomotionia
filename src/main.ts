@@ -2543,18 +2543,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     // CONFIGURAÇÕES E TEMA (Aparência)
     // ==========================================
     const openSettingsBtn = document.getElementById('open-settings-btn');
+    const settingsBtn = document.getElementById('settings-btn');
+    const menuSettingsBtn = document.getElementById('menu-settings-btn');
+    
     const settingsModal = document.getElementById('settings-modal');
     const closeSettingsBtn = document.getElementById('close-settings-btn');
     const themeButtons = document.querySelectorAll('.theme-toggle-btn');
 
+    const openSettings = (e) => {
+        e.preventDefault();
+        settingsModal.classList.add('active');
+        if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
+        const dashboardDropdown = document.getElementById('profile-dropdown-menu');
+        if (dashboardDropdown) dashboardDropdown.classList.remove('show');
+    };
+
     // Abre o modal
-    if (openSettingsBtn && settingsModal) {
-        openSettingsBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            settingsModal.classList.add('active');
-            if (profileDropdownMenu) profileDropdownMenu.classList.remove('show');
-        });
-    }
+    if (openSettingsBtn && settingsModal) openSettingsBtn.addEventListener('click', openSettings);
+    if (settingsBtn && settingsModal) settingsBtn.addEventListener('click', openSettings);
+    if (menuSettingsBtn && settingsModal) menuSettingsBtn.addEventListener('click', openSettings);
 
     // Fecha o modal
     if (closeSettingsBtn && settingsModal) {
