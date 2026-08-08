@@ -764,11 +764,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             if (error) throw error;
 
-            if (!prompts || prompts.length === 0) {
-                wGlobalContent.innerHTML = '<div class="loading-prompts">Nenhum prompt global encontrado.</div>';
-                return;
-            }
-
             let html = '';
             
             const kabumText = `Roteiro\n\n0–2 segundos\n\nA tela começa quase completamente escura.\n\nUma luz laranja percorre rapidamente a silhueta do Ninja, revelando o personagem.\n\nEle olha diretamente para a câmera.\n\n2–5 segundos\n\nO Ninja levanta o produto gamer e o apresenta para a câmera.\n\nA câmera realiza um dolly in suave enquanto o produto recebe uma iluminação laranja, destacando seu design.\n\n5–8 segundos\n\nO Ninja faz um pequeno movimento expressivo, como se estivesse dizendo "olha isso", enquanto o produto gira suavemente.\n\nA câmera aproxima-se ainda mais do produto.\n\nO fundo começa gradualmente a desaparecer em preto.\n\n8–10 segundos\n\nO Ninja e o produto desaparecem através de uma transição rápida para preto.\n\nUm feixe de luz laranja atravessa horizontalmente a tela.\n\nNo centro surge a logo oficial da KaBuM!, limpa e perfeitamente centralizada.\n\nA logo permanece por alguns instantes sobre o fundo preto.`;
@@ -787,7 +782,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             // Agrupar por categoria
             const categories = {};
-            prompts.forEach(prompt => {
+            if (prompts && prompts.length > 0) {
+                prompts.forEach(prompt => {
                 if (!categories[prompt.category]) categories[prompt.category] = [];
                 categories[prompt.category].push(prompt);
             });
@@ -828,6 +824,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     `;
                 });
                 html += `</div></div>`;
+            }
             }
             wGlobalContent.innerHTML = html;
             
@@ -1730,7 +1727,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <span>${escapeHTML(session.title)}</span>
                 </div>
                 <div class="history-actions">
-                    <button class="h-action-btn pin-btn" title="Fixar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg></button>
                     <button class="h-action-btn rename-btn" title="Renomear"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="16 3 21 8 8 21 3 21 3 16 16 3"></polygon></svg></button>
                     <button class="h-action-btn delete-btn" title="Apagar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
                 </div>
@@ -1739,13 +1735,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Trocar de sessão
             item.querySelector('.history-item-content').addEventListener('click', () => loadChatHistory(session.id));
             
-            // Fixar
-            item.querySelector('.pin-btn').addEventListener('click', async (e) => {
-                e.stopPropagation();
-                await supabase.from('chat_sessions').update({ is_pinned: !session.is_pinned }).eq('id', session.id);
-                loadSessions();
-            });
-
             // Renomear
             item.querySelector('.rename-btn').addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -1824,6 +1813,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             if (welcomeScreen) welcomeScreen.style.display = 'flex';
         }
+        switchView('chat');
     }
 
     // Carregar sessões logo após o login
