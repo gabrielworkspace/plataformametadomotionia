@@ -773,8 +773,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <h4>Vídeo Kabum Prompt</h4>
                     <p>Adicione uma imagem do ninja da Kabum para gerar este vídeo. O Roteiro já está configurado.</p>
                     <div class="prompt-card-actions">
-                        <button class="use-prompt-btn" data-text="${escapeHTML(kabumText)}" title="Usar no Chat">
-                            <i data-lucide="message-square" style="width: 14px; height: 14px;"></i> Usar no Chat
+                        <button class="view-prompt-btn" data-category="Roteiros Especiais" data-title="Vídeo Kabum Prompt" data-text="${escapeHTML(kabumText)}" title="Visualizar">
+                            <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Visualizar
                         </button>
                     </div>
                 </div>
@@ -809,8 +809,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     } else {
                         adminActions = `
                             <div class="prompt-card-actions">
-                                <button class="use-prompt-btn" data-text="${escapeHTML(prompt.text)}" title="Usar no Chat">
-                                    <i data-lucide="message-square" style="width: 14px; height: 14px;"></i> Usar no Chat
+                                <button class="view-prompt-btn" data-category="${escapeHTML(prompt.category)}" data-title="${escapeHTML(prompt.title)}" data-text="${escapeHTML(prompt.text)}" title="Visualizar">
+                                    <i data-lucide="eye" style="width: 14px; height: 14px;"></i> Visualizar
                                 </button>
                             </div>
                         `;
@@ -855,7 +855,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('add-prompt-category').value = target.dataset.category;
                     document.getElementById('add-prompt-title').value = target.dataset.title;
                     
-                    // Extrair partes com a nova função robusta
                     const rawText = target.dataset.text || '';
                     const parsed = parsePromptSections(rawText);
 
@@ -864,6 +863,46 @@ document.addEventListener('DOMContentLoaded', async () => {
                     document.getElementById('add-prompt-final').value = parsed.final;
                     
                     document.getElementById('modal-prompt-title').innerText = 'Editar Prompt';
+                    document.querySelector('.auth-submit-btn').style.display = 'block';
+                    document.getElementById('fetch-from-chat-btn').style.display = 'flex';
+                    
+                    // Remove readonly se for admin
+                    document.getElementById('add-prompt-category').removeAttribute('readonly');
+                    document.getElementById('add-prompt-title').removeAttribute('readonly');
+                    document.getElementById('add-prompt-initial').removeAttribute('readonly');
+                    document.getElementById('add-prompt-instructions').removeAttribute('readonly');
+                    document.getElementById('add-prompt-final').removeAttribute('readonly');
+
+                    document.getElementById('add-prompt-modal').classList.add('active');
+                });
+            });
+
+            wGlobalContent.querySelectorAll('.view-prompt-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const target = e.currentTarget as HTMLElement;
+                    document.getElementById('add-prompt-id').value = '';
+                    document.getElementById('add-prompt-category').value = target.dataset.category;
+                    document.getElementById('add-prompt-title').value = target.dataset.title;
+                    
+                    const rawText = target.dataset.text || '';
+                    const parsed = parsePromptSections(rawText);
+
+                    document.getElementById('add-prompt-initial').value = parsed.initial;
+                    document.getElementById('add-prompt-instructions').value = parsed.instructions;
+                    document.getElementById('add-prompt-final').value = parsed.final;
+                    
+                    document.getElementById('modal-prompt-title').innerText = 'Visualizar Prompt';
+                    document.querySelector('.auth-submit-btn').style.display = 'none';
+                    document.getElementById('fetch-from-chat-btn').style.display = 'none';
+                    
+                    // Adiciona readonly para não-admins
+                    document.getElementById('add-prompt-category').setAttribute('readonly', 'true');
+                    document.getElementById('add-prompt-title').setAttribute('readonly', 'true');
+                    document.getElementById('add-prompt-initial').setAttribute('readonly', 'true');
+                    document.getElementById('add-prompt-instructions').setAttribute('readonly', 'true');
+                    document.getElementById('add-prompt-final').setAttribute('readonly', 'true');
+
                     document.getElementById('add-prompt-modal').classList.add('active');
                 });
             });
@@ -1772,12 +1811,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         document.querySelectorAll('.message').forEach(m => m.remove());
         if (welcomeScreen) welcomeScreen.style.display = 'none';
+        
+        switchView('chat');
+        
+        const loader = document.createElement('div');
+        loader.className = 'message ai-message';
+        loader.id = 'history-loader';
+        loader.innerHTML = `
+            <div class="message-content">
+                <div class="typing-indicator" style="display: flex; align-items: center; justify-content: flex-start; padding-left: 8px;">
+                    <div class="logo-spin" style="font-size: 22px; font-weight: 700; color: var(--accent-primary);">&amp;</div>
+                    <span style="margin-left: 12px; font-size: 14px; color: var(--text-secondary); opacity: 0.8; font-weight: 500;">Carregando conversa...</span>
+                </div>
+            </div>
+        `;
+        messagesContainer.appendChild(loader);
 
         const { data: messages } = await supabase
             .from('chat_messages')
             .select('*')
             .eq('session_id', sessionId)
             .order('created_at', { ascending: true });
+            
+        const loaderEl = document.getElementById('history-loader');
+        if (loaderEl) loaderEl.remove();
 
         if (messages && messages.length > 0) {
             const fragment = document.createDocumentFragment();
@@ -1788,9 +1845,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     messageDiv.innerHTML = `
                         <div class="message-content">
                             <p>${escapeHTML(msg.content)}</p>
-                        </div>
-                        <div class="message-avatar">
-                            <img src="${userAvatar.src}" alt="User">
                         </div>
                     `;
                     fragment.appendChild(messageDiv);
@@ -1813,7 +1867,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             if (welcomeScreen) welcomeScreen.style.display = 'flex';
         }
-        switchView('chat');
     }
 
     // Carregar sessões logo após o login
