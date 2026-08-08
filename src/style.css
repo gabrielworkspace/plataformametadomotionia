@@ -785,21 +785,52 @@ body {
         display: flex !important;
     }
 
-    .history-sidebar {
-        position: absolute;
-        transform: translateX(-100%);
-        height: 100%;
-        border-radius: 0;
-        border: none;
-        border-right: 1px solid var(--border-color);
-        z-index: 100;
-        background: var(--bg-main);
-        transition: transform 0.3s ease;
+    .history-sidebar, .history-sidebar.collapsed {
+        position: absolute !important;
+        left: -320px !important;
+        transform: none !important;
+        width: 280px !important;
+        height: 100% !important;
+        border-radius: 0 !important;
+        border: none !important;
+        border-right: 1px solid var(--border-color) !important;
+        z-index: 100 !important;
+        background: var(--bg-main) !important;
+        transition: left 0.3s ease !important;
+        padding: 16px 12px !important;
     }
 
-    .history-sidebar.mobile-open {
-        transform: translateX(0);
-        box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    .history-sidebar.mobile-open, .history-sidebar.collapsed.mobile-open {
+        left: 0 !important;
+        box-shadow: 0 0 50px rgba(0,0,0,0.8) !important;
+    }
+    
+    /* Força os elementos do sidebar a ficarem visíveis no mobile, mesmo se a classe collapsed estiver presente */
+    .history-sidebar.collapsed .sidebar-text,
+    .history-sidebar.collapsed .nav-group-title,
+    .history-sidebar.collapsed .chat-history,
+    .history-sidebar.collapsed .warehouse-body,
+    .history-sidebar.collapsed .nav-placeholder,
+    .history-sidebar.collapsed .admin-btn,
+    .history-sidebar.collapsed .sidebar-footer button,
+    .history-sidebar.collapsed .badge,
+    .history-sidebar.collapsed .logo {
+        display: flex !important;
+        opacity: 1 !important;
+    }
+    
+    .history-sidebar.collapsed .new-chat-btn {
+        width: 100% !important;
+        padding: 10px 12px !important;
+    }
+    
+    .history-sidebar.collapsed .user-profile {
+        justify-content: flex-start !important;
+        padding: 10px 12px !important;
+    }
+    
+    .history-sidebar.collapsed .sidebar-header {
+        justify-content: space-between !important;
     }
     
     .chat-area {

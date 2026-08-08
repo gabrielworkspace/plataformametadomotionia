@@ -1349,24 +1349,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Verifica o limite de prompts se for aluno
         if (userRole !== 'admin') {
+            const today = new Date();
+            // Reseta à meia-noite local (por dia)
+            const dateString = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
             const userId = currentUser ? currentUser.id : 'visitante';
-            const storageKey = `prompt_usage_total_${userId}`;
+            const storageKey = `prompt_usage_${userId}`;
             
-            let usageCount = 0;
+            let usageData = { date: dateString, count: 0 };
             const stored = localStorage.getItem(storageKey);
             
             if (stored) {
-                usageCount = parseInt(stored, 10) || 0;
+                try {
+                    const parsed = JSON.parse(stored);
+                    if (parsed.date === dateString) {
+                        usageData = parsed;
+                    }
+                } catch (e) {
+                    console.error("Erro ao ler limite de uso", e);
+                }
             }
             
-            if (usageCount >= 5) {
-                alert("Você atingiu o limite gratuito de 5 gerações de prompts. Assine a plataforma para continuar!");
+            if (usageData.count >= 5) {
+                alert("Você atingiu o limite gratuito de 5 gerações de prompts. Você só poderá gerar novos prompts após 24 horas (ou à meia-noite)!");
                 return;
             }
             
             // Incrementa o uso
-            usageCount += 1;
-            localStorage.setItem(storageKey, usageCount.toString());
+            usageData.count += 1;
+            localStorage.setItem(storageKey, JSON.stringify(usageData));
         }
 
         const currentWelcomeScreen = document.querySelector('.welcome-screen') as HTMLElement;
