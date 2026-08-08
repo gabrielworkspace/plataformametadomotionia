@@ -164,7 +164,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const collapseBtn = document.getElementById('collapse-sidebar-btn');
     if (collapseBtn && mainSidebar) {
         collapseBtn.addEventListener('click', () => {
-            mainSidebar.classList.toggle('collapsed');
+            if (window.innerWidth <= 800) {
+                mainSidebar.classList.remove('mobile-open');
+            } else {
+                mainSidebar.classList.toggle('collapsed');
+            }
         });
     }
 
@@ -605,6 +609,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const myPromptsView = document.getElementById('my-prompts-view');
 
     function switchView(view) {
+        if (window.innerWidth <= 800) {
+            const sidebar = document.getElementById('main-sidebar');
+            if (sidebar) sidebar.classList.remove('mobile-open');
+        }
         if (view === 'chat') {
             if (messagesContainer) messagesContainer.style.display = 'flex';
             if (inputArea) inputArea.style.display = 'block';
@@ -762,6 +770,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             let html = '';
+            
+            const kabumText = `Roteiro\n\n0–2 segundos\n\nA tela começa quase completamente escura.\n\nUma luz laranja percorre rapidamente a silhueta do Ninja, revelando o personagem.\n\nEle olha diretamente para a câmera.\n\n2–5 segundos\n\nO Ninja levanta o produto gamer e o apresenta para a câmera.\n\nA câmera realiza um dolly in suave enquanto o produto recebe uma iluminação laranja, destacando seu design.\n\n5–8 segundos\n\nO Ninja faz um pequeno movimento expressivo, como se estivesse dizendo "olha isso", enquanto o produto gira suavemente.\n\nA câmera aproxima-se ainda mais do produto.\n\nO fundo começa gradualmente a desaparecer em preto.\n\n8–10 segundos\n\nO Ninja e o produto desaparecem através de uma transição rápida para preto.\n\nUm feixe de luz laranja atravessa horizontalmente a tela.\n\nNo centro surge a logo oficial da KaBuM!, limpa e perfeitamente centralizada.\n\nA logo permanece por alguns instantes sobre o fundo preto.`;
+            
+            html += `<div class="prompt-category"><h3>Roteiros Especiais</h3><div class="prompt-grid">
+                <div class="prompt-card" data-text="${escapeHTML(kabumText)}" style="position:relative;">
+                    <h4>Vídeo Kabum Prompt</h4>
+                    <p>Adicione uma imagem do ninja da Kabum para gerar este vídeo. O Roteiro já está configurado.</p>
+                    <div class="prompt-card-actions">
+                        <button class="use-prompt-btn" data-text="${escapeHTML(kabumText)}" title="Usar no Chat">
+                            <i data-lucide="message-square" style="width: 14px; height: 14px;"></i> Usar no Chat
+                        </button>
+                    </div>
+                </div>
+            </div></div>`;
+            
             // Agrupar por categoria
             const categories = {};
             prompts.forEach(prompt => {
