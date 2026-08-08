@@ -1349,34 +1349,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         // Verifica o limite de prompts se for aluno
         if (userRole !== 'admin') {
-            const today = new Date();
-            // Usamos a data local (ano-mes-dia) para resetar a meia-noite local
-            const dateString = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
             const userId = currentUser ? currentUser.id : 'visitante';
-            const storageKey = `prompt_usage_${userId}`;
+            const storageKey = `prompt_usage_total_${userId}`;
             
-            let usageData = { date: dateString, count: 0 };
+            let usageCount = 0;
             const stored = localStorage.getItem(storageKey);
             
             if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    if (parsed.date === dateString) {
-                        usageData = parsed;
-                    }
-                } catch (e) {
-                    console.error("Erro ao ler limite de uso", e);
-                }
+                usageCount = parseInt(stored, 10) || 0;
             }
             
-            if (usageData.count >= 5) {
-                alert("Você atingiu o limite de 5 prompts por dia. Seu limite será renovado à meia-noite!");
+            if (usageCount >= 5) {
+                alert("Você atingiu o limite gratuito de 5 gerações de prompts. Assine a plataforma para continuar!");
                 return;
             }
             
             // Incrementa o uso
-            usageData.count += 1;
-            localStorage.setItem(storageKey, JSON.stringify(usageData));
+            usageCount += 1;
+            localStorage.setItem(storageKey, usageCount.toString());
         }
 
         const currentWelcomeScreen = document.querySelector('.welcome-screen') as HTMLElement;
@@ -1963,7 +1953,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (processingStatusText && processingStatusText.textContent !== currentStage.label) {
                     processingStatusText.style.opacity = '0';
                     setTimeout(() => {
-                        processingStatusText.textContent = roundedProgress === 100 ? 'Done. Leads qualified, routed, answered.' : currentStage.label;
+                        processingStatusText.textContent = roundedProgress === 100 ? 'Concluído. Plataforma carregada com sucesso.' : currentStage.label;
                         processingStatusText.style.opacity = '1';
                     }, 150);
                 }
