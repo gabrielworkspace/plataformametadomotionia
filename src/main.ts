@@ -2116,6 +2116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // User: Toggle Widget
     function openSupportWidget() {
+        const supportWidget = document.getElementById('support-widget');
+        if (supportWidget) supportWidget.style.display = 'flex';
+        
         if (supportChatWindow) supportChatWindow.style.display = 'flex';
         if (supportIconOpen) (supportIconOpen as HTMLElement).style.display = 'none';
         if (supportIconClose) (supportIconClose as HTMLElement).style.display = 'block';
