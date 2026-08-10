@@ -2451,10 +2451,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dashboardGoAi = document.getElementById('dashboard-go-ai');
     const dashboardContainer = document.getElementById('dashboard-container');
     
+    const maintenancePage = document.getElementById('maintenance-page');
+    const backFromMaintenanceBtn = document.getElementById('back-from-maintenance-btn');
+
     if (dashboardGoAi) {
         dashboardGoAi.addEventListener('click', () => {
             if (dashboardContainer) dashboardContainer.style.display = 'none';
-            if (appContainer) appContainer.style.display = 'flex';
+            if (maintenancePage) maintenancePage.style.display = 'flex';
+        });
+    }
+
+    if (backFromMaintenanceBtn) {
+        backFromMaintenanceBtn.addEventListener('click', () => {
+            if (maintenancePage) maintenancePage.style.display = 'none';
+            if (dashboardContainer) dashboardContainer.style.display = 'flex';
         });
     }
     

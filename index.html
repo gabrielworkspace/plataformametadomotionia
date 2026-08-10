@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,200..800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <link rel="stylesheet" href="/src/style.css">
 </head>
 <body>
@@ -451,6 +452,18 @@
             </div>
         </main>
     </div> <!-- Fecha app-container -->
+
+    <!-- Maintenance Screen -->
+    <div class="maintenance-page" id="maintenance-page" style="display: none; align-items: center; justify-content: center; min-height: 100vh; width: 100%; position: absolute; top: 0; left: 0; z-index: 100; background: #0b0b0f; flex-direction: column; text-align: center;">
+        <div class="maintenance-content" style="max-width: 500px; padding: 40px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); backdrop-filter: blur(10px);">
+            <lottie-player src="https://lottie.host/32780280-401b-4c0f-bdbd-d28180b27629/i72MJlWy0G.json" background="transparent" speed="1" style="width: 250px; height: 250px; margin: 0 auto 24px auto;" loop autoplay></lottie-player>
+            <h2 style="color: white; font-size: 24px; font-weight: 700; margin-bottom: 12px; font-family: 'Bricolage Grotesque', sans-serif;">Área em Manutenção</h2>
+            <p style="color: rgba(255,255,255,0.7); font-size: 15px; margin-bottom: 32px; line-height: 1.5; font-family: 'Inter', sans-serif;">Nossa Inteligência Artificial está passando por melhorias no momento. Voltaremos em breve com novidades incríveis!</p>
+            <button id="back-from-maintenance-btn" style="background: linear-gradient(135deg, #00f2fe, #4facfe); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                Voltar para o Dashboard
+            </button>
+        </div>
+    </div>
 
     <!-- Support Chat Widget (For Users) -->
     <div class="support-widget" id="support-widget" style="display: none;">
